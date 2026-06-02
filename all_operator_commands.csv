@@ -1,0 +1,693 @@
+Operator,Test Command,Benchmark Command
+Adaptive_Attention_Span,python -m pytest tests/test_special_ops.py -m Adaptive_Attention_Span -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m Adaptive_Attention_Span -vs
+Add+LayerNorm,python -m pytest tests/test_norm_ops.py -m add_layer_norm -vs,python -m pytest benchmark/test_fused_perf.py -m add_layer_norm -vs
+Add+RMSNorm,python -m pytest tests/test_norm_ops.py -m Add_RMSNorm -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_fused_perf.py -m Add_RMSNorm -vs
+Add+Softmax,python -m pytest tests/test_special_ops.py -m add_softmax -vs,python -m pytest benchmark/test_special_perf.py -m add_softmax -vs
+Add_RMSNorm,CUDA_VISIBLE_DEVICES=1 /usr/bin/python3 -m pytest tests/test_norm_ops.py -m add_rms_norm -vs,CUDA_VISIBLE_DEVICES=1 /usr/bin/python3 -m pytest benchmark/test_norm_perf.py -m add_rms_norm -vs
+Add_Softmax,CUDA_VISIBLE_DEVICES=4 python -m pytest tests/test_special_ops.py -m add_softmax -vs,CUDA_VISIBLE_DEVICES=4 python -m pytest benchmark/test_special_perf.py -m add_softmax -vs
+And,python -m pytest tests/test_binary_pointwise_ops.py -m And -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m and_op -vs
+BatchNorm+ReLU+Dropout,python -m pytest tests/test_norm_ops.py -m batch_norm_relu_dropout -vs,python -m pytest benchmark/test_norm_perf.py -m batch_norm_relu_dropout -vs
+BatchNorm,python -m pytest tests/test_norm_ops.py -m batch_norm -vs,python -m pytest benchmark/test_norm_perf.py -m batch_norm -vs
+BatchNorm_ReLU_Dropout,python -m pytest tests/test_norm_ops.py -m BatchNorm_ReLU_Dropout -vs,python -m pytest benchmark/test_norm_perf.py -m BatchNorm_ReLU_Dropout -vs
+Beam_Search_Score,python -m pytest tests/test_binary_pointwise_ops.py -m Beam_Search_Score -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_binary_pointwise_perf.py -m Beam_Search_Score -vs
+Cast,python -m pytest tests/test_unary_pointwise_ops.py -m 'Cast or Cast_' -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m cast -vs
+Causal_Convolution,python -m pytest tests/test_special_ops.py -m causal_conv1d -vs,python -m pytest benchmark/test_special_perf.py -m causal_conv1d -vs
+Concat,python -m pytest tests/test_special_ops.py -m concatenate -vs,python -m pytest benchmark/test_tensor_concat_perf.py -m concatenate -vs
+Constant,python -m pytest tests/test_unary_pointwise_ops.py -m Constant -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m Constant -vs
+ConstantOfShape,python -m pytest tests/test_tensor_constructor_ops.py -m constant_of_shape -vs,python -m pytest benchmark/test_tensor_constructor_perf.py -m constant_of_shape -vs
+conv_relu,python -m pytest tests/test_convolution_ops.py -m conv_relu -q,python -m pytest benchmark/test_convolution_perf.py -m conv_relu -vs
+Conv+BN+ReLU,python -m pytest tests/test_special_ops.py -m Conv_BN_ReLU -vs,python -m pytest benchmark/test_special_perf.py -m Conv_BN_ReLU -vs
+Conv+GELU,python -m pytest tests/test_convolution_ops.py -m conv_gelu -vs,python -m pytest benchmark/test_convolution_perf.py -m conv_gelu -vs
+conv_transpose2d,python -m pytest tests/test_convolution_ops.py -m conv_transpose2d -vs,python -m pytest benchmark/test_convolution_perf.py -m conv_transpose2d -vs
+Conv_Activation,python -m pytest tests/test_convolution_ops.py -m conv_activation -vs,python -m pytest benchmark/test_convolution_perf.py -m conv_activation -vs
+Conv_BN_ReLU,CUDA_VISIBLE_DEVICES=7 /usr/bin/python3 -m pytest tests/test_special_ops.py -m conv_bn_relu -v,CUDA_VISIBLE_DEVICES=7 /usr/bin/python3 -m pytest benchmark/test_special_perf.py -m conv_bn_relu -v -s
+Conv_GELU,python -m pytest tests/test_convolution_ops.py -m Conv_GELU -vs,python -m pytest benchmark/test_convolution_perf.py -m Conv_GELU -vs
+Cross_Attention,python -m pytest tests/test_attention_ops.py -m cross_attention -vs,python -m pytest benchmark/test_special_perf.py -m cross_attention -vs
+Depthwise_Pointwise_Conv,python -m pytest tests/test_convolution_ops.py -m depthwise_pointwise_conv2d -vs,python -m pytest benchmark/test_convolution_perf.py -m depthwise_pointwise_conv2d -vs
+Dropout_Add_LayerNorm,python -m pytest tests/test_norm_ops.py -m dropout_add_layernorm -vs,python -m pytest benchmark/test_fused_perf.py -m dropout_add_layernorm -vs
+DynamicQuantizeLSTM,python -m pytest tests/test_special_ops.py -m DynamicQuantizeLSTM -vs,python -m pytest benchmark/test_special_perf.py -m DynamicQuantizeLSTM -vs
+DynamicQuantizeLinear,python -m pytest tests/test_special_ops.py -m DynamicQuantizeLinear -vs,python -m pytest benchmark/test_special_perf.py -m DynamicQuantizeLinear -vs
+ExpandDims,CUDA_VISIBLE_DEVICES=7 /usr/bin/python3 -m pytest tests/test_special_ops.py -m expand_dims -vs --log-cli-level=DEBUG,CUDA_VISIBLE_DEVICES=7 /usr/bin/python3 -m pytest benchmark/test_special_perf.py -m expand_dims -vs
+FlashAttention_V2,python -m pytest tests/test_attention_ops.py -m FlashAttention_V2 -vs,python -m pytest benchmark/test_attention_perf.py -m FlashAttention_V2 -vs
+FlashDecoding,python -m pytest tests/test_special_ops.py -m flash_decoding -vs,python -m pytest benchmark/test_special_perf.py -m flash_decoding -vs
+Flatten,python -m pytest tests/test_special_ops.py -m Flatten -vs,python -m pytest benchmark/test_special_perf.py -m Flatten -vs
+Fused_Cross_Entropy,python -m pytest tests/test_special_ops.py -m Fused_Cross_Entropy -vs,python -m pytest benchmark/test_special_perf.py -m Fused_Cross_Entropy -vs
+Fused_RoPE,python -m pytest tests/test_special_ops.py -m Fused_RoPE -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m Fused_RoPE -vs
+Fused_Softmax,python -m pytest tests/test_special_ops.py -m Fused_Softmax -vs,python -m pytest benchmark/test_special_perf.py -m Fused_Softmax -vs
+Fused_SwiGLU,python -m pytest tests/test_unary_pointwise_ops.py -m Fused_SwiGLU -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m Fused_SwiGLU -vs
+GRU_Attention,python -m pytest tests/test_special_ops.py -m gru_attention -vs,python -m pytest benchmark/test_special_perf.py -m gru_attention -vs
+GatherBlockQuantized,python -m pytest tests/test_special_ops.py -m gather_block_quantized -vs,python -m pytest benchmark/test_special_perf.py -m gather_block_quantized -vs
+GreaterEqual,python -m pytest tests/test_binary_pointwise_ops.py -m greater_equal -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m greater_equal -vs
+GreaterOrEqual,python -m pytest tests/test_binary_pointwise_ops.py -m GreaterOrEqual -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m GreaterOrEqual -vs
+GreaterThan,python -m pytest tests/test_binary_pointwise_ops.py -m greater -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m greater -vs
+GroupNorm,CUDA_VISIBLE_DEVICES=3 /usr/bin/python3 -m pytest tests/test_norm_ops.py -m group_norm -vs,CUDA_VISIBLE_DEVICES=3 /usr/bin/python3 -m pytest benchmark/test_norm_perf.py -m group_norm -vs
+GroupQueryAttention,python -m pytest tests/test_attention_ops.py -m group_query_attention -vs,python -m pytest benchmark/test_attention_perf.py -m group_query_attention -vs
+Grouped_Query_Attention_GQA,python -m pytest tests/test_attention_ops.py -m Grouped_Query_Attention_GQA -vs,python -m pytest benchmark/test_attention_perf.py -m Grouped_Query_Attention_GQA -vs
+If,python -m pytest tests/test_binary_pointwise_ops.py -m If -vs,python -m pytest benchmark/test_generic_pointwise_perf.py -m If -vs
+InstanceNorm,python -m pytest tests/test_norm_ops.py -m instance_norm -vs,python -m pytest benchmark/test_norm_perf.py -m instance_norm -vs
+KV_Cache_Update,python -m pytest tests/test_special_ops.py -m kv_cache_update -vs,python -m pytest benchmark/test_special_perf.py -m kv_cache_update -vs
+L2Norm,python -m pytest tests/test_reduction_ops.py -m L2Norm -vs,python -m pytest benchmark/test_reduction_perf.py -m L2Norm -vs
+LayerNorm+Dropout,python -m pytest tests/test_norm_ops.py -m layer_norm_dropout -vs,python -m pytest benchmark/test_norm_perf.py -m layer_norm_dropout -vs
+LayerNorm+GeLU,python -m pytest tests/test_norm_ops.py -m layer_norm_gelu -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_norm_perf.py -m layer_norm_gelu -vs
+LayerNorm,python -m pytest tests/test_norm_ops.py -m LayerNorm -vs,python -m pytest benchmark/test_norm_perf.py -m LayerNorm -vs
+LayerNorm_Dropout,CUDA_VISIBLE_DEVICES=0 python -m pytest tests/test_norm_ops.py -m LayerNorm_Dropout -vs,CUDA_VISIBLE_DEVICES=0 python -m pytest benchmark/test_norm_perf.py -m LayerNorm_Dropout -vs
+LeakyReLU,CUDA_VISIBLE_DEVICES=1 /usr/bin/python3 -m pytest tests/test_unary_pointwise_ops.py -m LeakyReLU -vs,CUDA_VISIBLE_DEVICES=1 /usr/bin/python3 -m pytest benchmark/test_unary_pointwise_perf.py -m LeakyReLU -vs
+LessEqual,python -m pytest tests/test_binary_pointwise_ops.py -m less_equal -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m less_equal -vs
+LessOrEqual,python -m pytest tests/test_binary_pointwise_ops.py -m LessOrEqual -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m LessOrEqual -vs
+LessThan,CUDA_VISIBLE_DEVICES=3 python -m pytest tests/test_binary_pointwise_ops.py -m less -vs,CUDA_VISIBLE_DEVICES=3 python -m pytest benchmark/test_binary_pointwise_perf.py -m less -vs
+Linear+GeLU+Linear,python -m pytest tests/test_special_ops.py -m linear_gelu_linear -vs,python -m pytest benchmark/test_special_perf.py -m linear_gelu_linear -vs
+MatMulAdd,python -m pytest tests/test_blas_ops.py -m MatMulAdd -v,python -m pytest benchmark/test_blas_perf.py -m matmuladd -v
+Matmul_Bias_Activation,python -m pytest tests/test_blas_ops.py -m matmul_bias_activation -vs,python -m pytest benchmark/test_blas_perf.py -m matmul_bias_activation -vs
+Matmul_Bias_Residual,python -m pytest tests/test_blas_ops.py -m Matmul_Bias_Residual -vs,python -m pytest benchmark/test_blas_perf.py -m Matmul_Bias_Residual -vs
+Matmul_Layer_Norm,python -m pytest tests/test_special_ops.py -m matmul_layernorm -vs,python -m pytest benchmark/test_special_perf.py -m matmul_layernorm -vs
+MoE_Expert_Dispatch,python -m pytest tests/test_special_ops.py -m moe_expert_dispatch -vs,python -m pytest benchmark/test_special_perf.py -m moe_expert_dispatch -vs
+MoE_Gate_TopK_Routing,python -m pytest tests/test_special_ops.py -m MoE_Gate_TopK_Routing -vs,python -m pytest benchmark/test_special_perf.py -m MoE_Gate_TopK_Routing -vs
+MoE_Load_Balance_Loss,python -m pytest tests/test_special_ops.py -m moe_load_balance_loss -vs,python -m pytest benchmark/test_special_perf.py -m moe_load_balance_loss -vs
+Mod,python -m pytest tests/test_binary_pointwise_ops.py -m remainder -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m remainder -vs
+Multi_Head_Attention_MHA,python -m pytest tests/test_attention_ops.py -m multi_head_attention_mha -vs,python -m pytest benchmark/test_attention_perf.py -m multi_head_attention_mha -vs
+Multi_Query_Attention_MQA,python -m pytest tests/test_attention_ops.py -m Multi_Query_Attention_MQA -vs,python -m pytest benchmark/test_attention_perf.py -m Multi_Query_Attention_MQA -vs
+NLL_loss_backward,python -m pytest tests/test_reduction_ops.py -m nll_loss -vs,python -m pytest benchmark/test_reduction_perf.py -m nll_loss -vs
+Not,python -m pytest tests/test_unary_pointwise_ops.py -m not_ -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m not_ -vs
+Paged_Attention,python -m pytest tests/test_attention_ops.py -m Paged_Attention -vs,python -m pytest benchmark/test_attention_perf.py -m Paged_Attention -vs
+Permute,python -m pytest tests/test_special_ops.py -m permute -vs,python -m pytest benchmark/test_generic_pointwise_perf.py -m permute -vs
+Position_wise_FFN,python -m pytest tests/test_special_ops.py -m Position_wise_FFN -vs,python -c (simple benchmark script)
+QKV_Projection_Fusion,CUDA_VISIBLE_DEVICES=2 /usr/bin/python3 -m pytest tests/test_special_ops.py -m qkv_projection_fusion -vs --ref cpu,CUDA_VISIBLE_DEVICES=2 /usr/bin/python3 -m pytest benchmark/test_special_perf.py -m qkv_projection_fusion -vs
+rms_norm_linear,python -m pytest tests/test_norm_ops.py -m rms_norm_linear -vs,python -m pytest benchmark/test_fused_perf.py -m rms_norm_linear -vs
+RMSNorm,python -m pytest tests/test_norm_ops.py -m 'RMSNorm or RMSNorm_' -vs,python -m pytest benchmark/test_norm_perf.py -m RMSNorm -vs
+RMSNorm_Linear,python -m pytest tests/test_special_ops.py -m rms_norm_linear -vs,python -m pytest benchmark/test_special_perf.py -m rms_norm_linear -vs
+Range,python -m pytest tests/test_special_ops.py -m range -vs,python -m pytest benchmark/test_tensor_constructor_perf.py -m range -vs
+ReduceArgMax,python -m pytest tests/test_reduction_ops.py -m ReduceArgMax -vs,python -m pytest benchmark/test_reduction_perf.py -m ReduceArgMax -vs
+ReduceArgMin,python -m pytest tests/test_reduction_ops.py -m ReduceArgMin -vs,python -m pytest benchmark/test_reduction_perf.py -m ReduceArgMin -vs
+ReduceL2,python -m pytest tests/test_reduction_ops.py -m reduce_l2 -vs,python -m pytest benchmark/test_reduction_perf.py -m reduce_l2 -vs
+ReduceLogSumExp,python -m pytest tests/test_reduction_ops.py -m logsumexp -vs,python -m pytest benchmark/test_reduction_perf.py -m logsumexp -vs
+ReduceMax,python -m pytest tests/test_reduction_ops.py -m reduce_max -vs,python -m pytest benchmark/test_reduction_perf.py -m reduce_max -vs
+ReduceMean,python -m pytest tests/test_general_reduction_ops.py -m ReduceMean -vs,python -m pytest benchmark/test_reduction_perf.py -m ReduceMean -vs
+ReduceMin,python -m pytest tests/test_general_reduction_ops.py -m ReduceMin -vs,python -m pytest benchmark/test_reduction_perf.py -m ReduceMin -vs
+ReduceNorm,python -m pytest tests/test_norm_ops.py -m reduce_norm -vs,python -m pytest benchmark/test_norm_perf.py -m reduce_norm -vs
+ReduceProd,CUDA_VISIBLE_DEVICES=0 /usr/bin/python3 -m pytest tests/test_general_reduction_ops.py -m prod -vs --log-cli-level=DEBUG,CUDA_VISIBLE_DEVICES=0 /usr/bin/python3 -m pytest benchmark/test_reduction_perf.py -m prod -vs
+ReduceSum,CUDA_VISIBLE_DEVICES=5 python -m pytest tests/test_general_reduction_ops.py -m ReduceSum -vs,CUDA_VISIBLE_DEVICES=5 python -m pytest benchmark/test_reduction_perf.py -m ReduceSum -vs
+ReduceVariance,python -m pytest tests/test_reduction_ops.py -m ReduceVariance -vs,python -m pytest benchmark/test_reduction_perf.py -m ReduceVariance -vs
+Reshape,python -m pytest tests/test_unary_pointwise_ops.py -m reshape -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m reshape -vs
+Scaled_dot_product_attention_backward,python -m pytest benchmark/test_attention_perf.py::test_perf_scaled_dot_product_attention -vs,python -m pytest benchmark/test_attention_perf.py::test_perf_scaled_dot_product_attention -vs
+ScatterND,python -m pytest tests/test_special_ops.py -m ScatterND -vs,python -m pytest benchmark/test_special_perf.py -m ScatterND -vs
+shape,python -m pytest tests/test_special_ops.py -m shape -vs,python -m pytest benchmark/test_special_perf.py -m shape -vs
+Silu_backward,python -m pytest tests/test_unary_pointwise_ops.py -m silu_backward -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -k 'silu and backward' -vs
+Slice,python -m pytest tests/test_special_ops.py -m Slice -vs,python -m pytest benchmark/test_special_perf.py -m slice -vs
+Sliding_Window_Attention,python -m pytest tests/test_special_ops.py -m Sliding_Window_Attention -vs,python -m pytest benchmark/test_special_perf.py -m Sliding_Window_Attention -vs
+Split,python -m pytest tests/test_special_ops.py -m split -vs,python -m pytest benchmark/test_special_perf.py -m split -vs
+Squeeze,python -m pytest tests/test_special_ops.py -m squeeze -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m squeeze -vs
+Swin_Transformer_Attention,CUDA_VISIBLE_DEVICES=2 python -m pytest tests/test_special_ops.py -m Swin_Transformer_Attention -vs,CUDA_VISIBLE_DEVICES=2 python -m pytest benchmark/test_special_perf.py -m Swin_Transformer_Attention -vs
+Swish,python -m pytest tests/test_unary_pointwise_ops.py -m swish -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_unary_pointwise_perf.py -m swish -vs
+Top_K_Sampling,python -m pytest tests/test_special_ops.py -m Top_K_Sampling -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m Top_K_Sampling -vs
+Top_P_Sampling,python -m pytest tests/test_special_ops.py -m top_p_sampling -vs,python -m pytest benchmark/test_special_perf.py -m top_p_sampling -vs
+__and__,python -m pytest tests/test_binary_pointwise_ops.py -m and_op -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m and_op -vs
+__iand__,python -m pytest tests/test_binary_pointwise_ops.py -m iand -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m iand -vs
+__ilshift__,python -m pytest tests/test_unary_pointwise_ops.py -m ilshift -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m ilshift -vs
+__ior__,python -m pytest tests/test_binary_pointwise_ops.py -m ior -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m ior -vs
+__irshift__,python -m pytest tests/test_unary_pointwise_ops.py -m irshift -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m irshift -vs
+bitwise_xor,python -m pytest tests/test_binary_pointwise_ops.py -m bitwise_xor -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m bitwise_xor -vs
+__lshift__,python -m pytest tests/test_binary_pointwise_ops.py -m lshift -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m lshift -vs
+__xor__,python -m pytest tests/test_binary_pointwise_ops.py -m xor -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m xor -vs
+_adaptive_avg_pool2d,python -m pytest tests/test_reduction_ops.py -m adaptive_avg_pool2d -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_reduction_perf.py -m adaptive_avg_pool2d -vs
+_adaptive_avg_pool3d,python -m pytest tests/test_special_ops.py -m adaptive_avg_pool3d -vs,python -m pytest benchmark/test_special_perf.py -m adaptive_avg_pool3d -vs
+_adaptive_avg_pool3d_backward,python -m pytest tests/test_special_ops.py -m adaptive_avg_pool3d_backward -vs,python -m pytest benchmark/test_special_perf.py -m adaptive_avg_pool3d_backward -vs
+_add_relu,python -m pytest tests/test_binary_pointwise_ops.py -m add_relu -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_binary_pointwise_perf.py -m add_relu -vs
+_addmm_activation,python -m pytest tests/test_blas_ops.py -m addmm_activation -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_blas_perf.py -m addmm_activation -vs
+_amp_foreach_non_finite_check_and_unscale_,python -m pytest tests/test_special_ops.py -m amp_foreach_non_finite_check_and_unscale -vs,python -m pytest benchmark/test_special_perf.py -m amp_foreach_non_finite_check_and_unscale -vs
+_assert_async,python -m pytest tests/test_special_ops.py -m assert_async -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m assert_async -vs
+_assert_tensor_metadata,python -m pytest tests/test_special_ops.py -m assert_tensor_metadata -vs,python -m pytest benchmark/test_special_perf.py -m assert_tensor_metadata -vs
+_batch_norm_no_update,python -m pytest tests/test_norm_ops.py -m batch_norm_no_update -vs,python -m pytest benchmark/test_norm_perf.py -m batch_norm_no_update -vs
+_batch_norm_with_update,python -m pytest tests/test_norm_ops.py -m batch_norm_with_update -vs,python -m pytest benchmark/test_norm_perf.py -m batch_norm_with_update -vs
+_batch_norm_with_update_functional,python -m pytest tests/test_norm_ops.py -m batch_norm_with_update_functional -vs,python -m pytest benchmark/test_norm_perf.py -m batch_norm_with_update_functional -vs
+_cdist_backward,python -m pytest tests/test_special_ops.py -m cdist_backward -vs,python -m pytest benchmark/test_special_perf.py -m cdist_backward -vs
+_cdist_forward,python -m pytest tests/test_special_ops.py -m cdist_forward -vs,python -m pytest benchmark/test_special_perf.py -m cdist_forward -vs
+_cholesky_solve_helper,python -m pytest tests/test_special_ops.py -m cholesky_solve_helper -vs,Manual benchmark (standard benchmark framework had compatibility issues)
+_chunk_cat,python -m pytest tests/test_special_ops.py -m chunk_cat -vs,python -m pytest benchmark/test_special_perf.py -m chunk_cat -vs
+_conj,python -m pytest tests/test_special_ops.py -m conj -vs,python -m pytest benchmark/test_special_perf.py -m conj -vs
+_conv_depthwise2d,CUDA_VISIBLE_DEVICES=7 /usr/bin/python3 -m pytest tests/test_convolution_ops.py -m depthwise2d -vs --log-cli-level=DEBUG,CUDA_VISIBLE_DEVICES=7 /usr/bin/python3 -m pytest benchmark/test_convolution_perf.py -m depthwise2d -vs
+_convert_weight_to_int4pack,python -m pytest tests/test_special_ops.py -m convert_weight_to_int4pack -vs,python -m pytest benchmark/test_special_perf.py -m convert_weight_to_int4pack -vs
+_convert_weight_to_int4pack_for_cpu,python -m pytest tests/test_special_ops.py -m convert_weight_to_int4pack_for_cpu -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m convert_weight_to_int4pack_for_cpu -vs
+_cslt_sparse_mm,python -m pytest tests/test_special_ops.py -m cslt_sparse_mm -vs,python -m pytest benchmark/test_special_perf.py -m cslt_sparse_mm -vs
+_cudnn_attention_backward,python -m pytest tests/test_attention_ops.py -m cudnn_attention_backward -vs,python -m pytest benchmark/test_attention_perf.py -m cudnn_attention_backward -vs
+_cudnn_attention_forward,python -m pytest tests/test_attention_ops.py -m cudnn_attention_forward -vs,python -m pytest benchmark/test_attention_perf.py -m cudnn_attention_forward -vs
+_cudnn_rnn,python -m pytest tests/test_special_ops.py -m cudnn_rnn -vs,N/A - operator not registered to avoid recursion
+_cudnn_rnn_backward,python -m pytest tests/test_special_ops.py -m cudnn_rnn_backward -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m cudnn_rnn_backward -vs
+_dyn_quant_matmul_4bit,python -m pytest tests/test_special_ops.py -m dyn_quant_matmul_4bit -vs,python -m pytest benchmark/test_special_perf.py -m dyn_quant_matmul_4bit -vs
+_dyn_quant_pack_4bit_weight,python -m pytest tests/test_special_ops.py -m dyn_quant_pack_4bit_weight -vs,python -m pytest benchmark/test_special_perf.py -m dyn_quant_pack_4bit_weight -vs
+_efficient_attention_backward,python -m pytest tests/test_attention_ops.py -m efficient_attention_backward -vs,python -m pytest benchmark/test_attention_perf.py -m efficient_attention_backward -vs
+_efficient_attention_forward,python -m pytest tests/test_special_ops.py -m efficient_attention_forward -vs,python -m pytest benchmark/test_special_perf.py -m efficient_attention_forward -vs
+_embedding_bag,python -m pytest tests/test_special_ops.py -m embedding_bag -vs,python -m pytest benchmark/test_special_perf.py -m embedding_bag -vs
+_embedding_bag_backward,python -m pytest tests/test_special_ops.py -m embedding_bag_backward -vs,python -m pytest benchmark/test_special_perf.py -m embedding_bag_backward -vs
+_embedding_bag_dense_backward,python -m pytest tests/test_special_ops.py -m embedding_bag_dense_backward -vs,python -m pytest benchmark/test_special_perf.py -m embedding_bag_dense_backward -vs
+_embedding_bag_forward_only,python -m pytest tests/test_special_ops.py -m embedding_bag_forward -vs,python -m pytest benchmark/test_special_perf.py -m embedding_bag_forward -vs
+_embedding_bag_per_sample_weights_backward,python -m pytest tests/test_special_ops.py -m embedding_bag_per_sample_weights_backward -vs,python -m pytest benchmark/test_special_perf.py -m embedding_bag_per_sample_weights_backward -vs
+_euclidean_dist,python -m pytest tests/test_special_ops.py -m euclidean_dist -vs,python -m pytest benchmark/test_special_perf.py -m euclidean_dist -vs
+_fft_c2c,python -m pytest tests/test_special_ops.py -m fft_c2c -vs,python -m pytest benchmark/test_special_perf.py -m fft_c2c -vs
+_fft_c2r,python -m pytest tests/test_special_ops.py -m fft_c2r -vs,python -m pytest benchmark/test_special_perf.py -m fft_c2r -vs
+_fft_r2c,python -m pytest tests/test_special_ops.py -m fft_r2c -vs,python -m pytest tests/test_special_ops.py -m fft_r2c -vs
+_flash_attention_backward,python -m pytest tests/test_special_ops.py -m flash_attention_backward -vs,python -m pytest benchmark/test_special_perf.py -m flash_attention_backward -vs
+_functional_assert_async,python -m pytest tests/test_unary_pointwise_ops.py -m functional_assert_async -vs,python -m pytest benchmark/test_special_perf.py -m functional_assert_async -vs
+_functional_sym_constrain_range,python -m pytest tests/test_unary_pointwise_ops.py -m functional_sym_constrain_range -vs,python -m pytest benchmark/test_special_perf.py -m functional_sym_constrain_range -vs
+_fused_adam,python -m pytest tests/test_special_ops.py -m fused_adam -vs && python -m pytest tests/test_special_ops.py -m fused_adam_ -vs,python -m pytest benchmark/test_special_perf.py -m fused_adam -vs
+_fused_adam_,CUDA_VISIBLE_DEVICES=2 /usr/bin/python3 -m pytest tests/test_special_ops.py -m fused_adam -vs,CUDA_VISIBLE_DEVICES=2 /usr/bin/python3 -m pytest benchmark/test_special_perf.py -m fused_adam -vs
+_fused_adamw_,python -m pytest tests/test_special_ops.py -m fused_adamw -vs,N/A - benchmark skipped due to API complexity
+_fused_dropout,python -m pytest tests/test_special_ops.py -m fused_dropout -vs,python -m pytest benchmark/test_special_perf.py -m fused_dropout -vs
+_fused_moving_avg_obs_fq_helper,python -m pytest tests/test_special_ops.py -m fused_moving_avg_obs_fq_helper -vs,python -m pytest benchmark/test_special_perf.py -m fused_moving_avg_obs_fq_helper -vs
+_grouped_mm,python -m pytest tests/test_special_ops.py -m grouped_mm -vs,python -m pytest benchmark/test_special_perf.py -m grouped_mm -vs
+_int_mm,python -m pytest tests/test_blas_ops.py -m int_mm -vs,python -m pytest benchmark/test_blas_perf.py -m int_mm -vs
+_is_all_true,python -m pytest tests/test_general_reduction_ops.py -m is_all_true -vs,python -m pytest benchmark/test_reduction_perf.py -m is_all_true -vs
+_jagged_to_padded_dense_forward,python -m pytest tests/test_special_ops.py -m jagged_to_padded_dense_forward -vs,python -m pytest benchmark/test_special_perf.py -m jagged_to_padded_dense_forward -vs
+_linalg_det,python -m pytest tests/test_special_ops.py -m linalg_det -vs,python -m pytest benchmark/test_special_perf.py -m linalg_det -vs
+_linalg_eigh,python -m pytest tests/test_special_ops.py -m linalg_eigh -vs,python -m pytest benchmark/test_special_perf.py -m linalg_eigh -vs
+_linalg_eigvals,python -m pytest tests/test_special_ops.py::test_accuracy_linalg_eigvals -vs,N/A - benchmark removed due to issues
+_linalg_slogdet,python -m pytest tests/test_special_ops.py -m linalg_slogdet -vs,python -m pytest benchmark/test_special_perf.py -m linalg_slogdet -vs
+_linalg_solve_ex,python -m pytest tests/test_blas_ops.py -m linalg_solve_ex -vs,python -m pytest benchmark/test_blas_perf.py -m linalg_solve_ex -vs
+_linalg_svd,python -m pytest tests/test_blas_ops.py -m linalg_svd -vs,python -m pytest benchmark/test_blas_perf.py -m linalg_svd -vs
+_list_to_tensor,python -m pytest tests/test_special_ops.py -m list_to_tensor -vs,python -m pytest benchmark/test_special_perf.py -m list_to_tensor -vs
+_local_scalar_dense,python -m pytest tests/test_special_ops.py -m local_scalar_dense -vs,python -m pytest benchmark/test_special_perf.py -m local_scalar_dense -vs
+_make_dep_token,python -m pytest tests/test_special_ops.py -m make_dep_token -vs,python -m pytest benchmark/test_special_perf.py -m make_dep_token -vs
+_masked_scale,python -m pytest tests/test_binary_pointwise_ops.py -m masked_scale -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m masked_scale -vs
+_native_batch_norm_legit,python -m pytest tests/test_norm_ops.py -m native_batch_norm_legit -vs,python -m pytest benchmark/test_norm_perf.py -m native_batch_norm_legit -vs
+_native_batch_norm_legit_functional,python -m pytest tests/test_norm_ops.py -m native_batch_norm_legit_functional -vs,python -m pytest benchmark/test_norm_perf.py -m native_batch_norm_legit_functional -vs
+_native_batch_norm_legit_no_training,python -m pytest tests/test_norm_ops.py -m native_batch_norm_legit_no_training -vs,python -m pytest benchmark/test_norm_perf.py -m native_batch_norm_legit_no_training -vs
+_nested_tensor_from_tensor_list,python -m pytest tests/test_special_ops.py -m nested_tensor_from_tensor_list -vs,python -m pytest benchmark/test_special_perf.py -m nested_tensor_from_tensor_list -vs
+_nested_view_from_buffer,python -m pytest tests/test_special_ops.py -m nested_view_from_buffer -vs,python -m pytest benchmark/test_special_perf.py -m nested_view_from_buffer -vs
+nested_view_from_buffer_copy,python -m pytest tests/test_special_ops.py -m nested_view_from_buffer_copy -vs,python -m pytest benchmark/test_special_perf.py -m nested_view_from_buffer_copy -vs
+_pack_padded_sequence,python -m pytest tests/test_special_ops.py -m pack_padded_sequence -vs,python -m pytest benchmark/test_special_perf.py -m pack_padded_sequence -vs
+_padded_dense_to_jagged_forward,python -m pytest tests/test_special_ops.py -m padded_dense_to_jagged_forward -vs,python -m pytest benchmark/test_special_perf.py -m padded_dense_to_jagged_forward -vs
+_pdist_backward,python -m pytest tests/test_special_ops.py -m pdist_backward -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m pdist_backward -vs
+_pdist_forward,python -m pytest tests/test_special_ops.py -m pdist_forward -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m pdist_forward -vs
+_pin_memory,python -m pytest tests/test_special_ops.py -m pin_memory -vs,python -m pytest benchmark/test_special_perf.py -m pin_memory -vs
+_prelu_kernel,python -m pytest tests/test_binary_pointwise_ops.py -m prelu_kernel -vs && python -m pytest tests/test_binary_pointwise_ops.py -m prelu_kernel_ -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m prelu_kernel -vs
+_prelu_kernel_backward,CUDA_VISIBLE_DEVICES=3 /usr/bin/python3 -m pytest tests/test_unary_pointwise_ops.py -m prelu_kernel_backward -vs,CUDA_VISIBLE_DEVICES=3 /usr/bin/python3 -m pytest benchmark/test_unary_pointwise_perf.py -m prelu_kernel_backward -vs
+_reshape_alias,python -m pytest tests/test_special_ops.py -m reshape_alias -vs,python -m pytest benchmark/test_special_perf.py -m reshape_alias -vs
+_resize_output,python -m pytest tests/test_special_ops.py -m 'resize_output or resize_output_' -vs,python -m pytest benchmark/test_special_perf.py -m resize_output -vs
+_resize_output_,python -m pytest tests/test_special_ops.py -m resize_output -vs,N/A
+_scaled_dot_product_attention_math_for_mps,python -m pytest tests/test_attention_ops.py -m scaled_dot_product_attention_math_for_mps -vs,Simple latency test with CUDA_VISIBLE_DEVICES=6
+_scaled_dot_product_cudnn_attention_backward,python -m pytest tests/test_attention_ops.py -m scaled_dot_product_cudnn_attention_backward -vs,python -m pytest benchmark/test_attention_perf.py -m scaled_dot_product_cudnn_attention_backward -vs
+_scaled_dot_product_efficient_attention,python -m pytest tests/test_attention_ops.py -m scaled_dot_product_efficient_attention -vs,python -m pytest benchmark/test_attention_perf.py -m scaled_dot_product_efficient_attention -vs
+_scaled_dot_product_efficient_attention_backward,python -m pytest tests/test_special_ops.py -m scaled_dot_product_efficient_attention_backward -vs,python -m pytest benchmark/test_special_perf.py -m scaled_dot_product_efficient_attention_backward -vs
+_scaled_dot_product_flash_attention_backward,python -m pytest tests/test_special_ops.py -m scaled_dot_product_flash_attention_backward -vs,python -m pytest benchmark/test_special_perf.py -m scaled_dot_product_flash_attention_backward -vs
+_scaled_dot_product_flash_attention_for_cpu,python -m pytest tests/test_attention_ops.py -m scaled_dot_product_flash_attention_for_cpu -vs,python -m pytest benchmark/test_attention_perf.py -m scaled_dot_product_flash_attention_for_cpu -vs
+_scaled_dot_product_flash_attention_for_cpu_backward,python -m pytest tests/test_attention_ops.py -m scaled_dot_product_flash_attention_for_cpu_backward -vs,python -m pytest benchmark/test_attention_perf.py -m scaled_dot_product_attention -vs
+_scaled_dot_product_fused_attention_overrideable,python -m pytest tests/test_attention_ops.py -m scaled_dot_product_fused_attention_overrideable -vs,python -m pytest benchmark/test_attention_perf.py -m scaled_dot_product_fused_attention_overrideable -vs
+_scaled_grouped_mm,python -m pytest tests/test_blas_ops.py -m scaled_grouped_mm -vs,python -m pytest benchmark/test_blas_perf.py -m scaled_grouped_mm -vs
+_scaled_mm,python -m pytest tests/test_blas_ops.py -m scaled_mm -vs,python -m pytest benchmark/test_blas_perf.py -m scaled_mm -vs
+_segment_reduce_backward,python -m pytest tests/test_special_ops.py -m segment_reduce_backward -vs,python -m pytest benchmark/test_special_perf.py -m segment_reduce_backward -vs
+_sparse_coo_tensor_with_dims_and_tensors,python -m pytest tests/test_special_ops.py -m sparse_coo_tensor_with_dims_and_tensors -vs,python -m pytest benchmark/test_special_perf.py -m sparse_coo_tensor_with_dims_and_tensors -vs
+_sparse_semi_structured_addmm,python -m pytest tests/test_blas_ops.py -m sparse_semi_structured_addmm -vs,python -m pytest benchmark/test_blas_perf.py -m sparse_semi_structured_addmm -vs
+_sparse_semi_structured_linear,python -m pytest tests/test_special_ops.py -m sparse_semi_structured_linear -vs,python -m pytest benchmark/test_special_perf.py -m sparse_semi_structured_linear -vs
+_sparse_semi_structured_mm,python -m pytest tests/test_special_ops.py::test_accuracy_sparse_semi_structured_mm -vs --log-cli-level=DEBUG,N/A - skipped due to environment limitation
+_thnn_fused_lstm_cell,python -m pytest tests/test_special_ops.py -m thnn_fused_lstm_cell -vs,python -m pytest benchmark/test_special_perf.py -m thnn_fused_lstm_cell -vs
+_thnn_fused_lstm_cell_backward_impl,python -m pytest tests/test_special_ops.py -m thnn_fused_lstm_cell_backward_impl -vs,python -m pytest benchmark/test_special_perf.py -m thnn_fused_lstm_cell_backward_impl -vs
+_to_copy,python -m pytest tests/test_unary_pointwise_ops.py -m to_copy -vs,python -m pytest benchmark/test_unary_pointwise_perf.py::test_to_copy_perf -vs
+_unsafe_index,python -m pytest tests/test_special_ops.py -m unsafe_index -vs,python -m pytest benchmark/test_special_perf.py -m unsafe_index -vs
+_unsafe_index_put,python -m pytest tests/test_reduction_ops.py -m unsafe_index_put -vs,python -m pytest benchmark/test_select_and_slice_perf.py -m unsafe_index_put -vs
+_unsafe_masked_index,python -m pytest tests/test_special_ops.py -m unsafe_masked_index -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m unsafe_masked_index -vs
+_unsafe_masked_index_put_accumulate,python -m pytest tests/test_special_ops.py -m unsafe_masked_index_put_accumulate -vs,python -m pytest benchmark/test_special_perf.py -m unsafe_masked_index_put_accumulate -vs
+_unsafe_view,python -m pytest tests/test_special_ops.py -m unsafe_view -vs,python -m pytest benchmark/test_special_perf.py -m unsafe_view -vs
+_upsample_bicubic2d_aa_backward,python -m pytest tests/test_special_ops.py -m upsample_bicubic2d_aa_backward -vs,python -m pytest benchmark/test_special_perf.py -m upsample_bicubic2d_aa_backward -vs
+_upsample_bilinear2d_aa,python -m pytest tests/test_special_ops.py -m upsample_bilinear2d_aa -vs,python -m pytest benchmark/test_special_perf.py -m upsample_bilinear2d_aa -vs
+_upsample_bilinear2d_aa_backward,python -m pytest tests/test_special_ops.py -m upsample_bilinear2d_aa_backward -vs (tests commented out due to implementation issues),N/A - not implemented
+_upsample_nearest_exact2d,python -m pytest tests/test_special_ops.py -m upsample_nearest_exact2d -vs,python -m pytest benchmark/test_special_perf.py -m upsample_nearest_exact2d -vs
+_upsample_nearest_exact2d_backward,python -m pytest tests/test_special_ops.py -m upsample_nearest_exact2d_backward -vs,python -m pytest benchmark/test_special_perf.py -m upsample_nearest_exact2d_backward -vs
+_upsample_nearest_exact3d,python -m pytest tests/test_special_ops.py -m upsample_nearest_exact3d -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m upsample_nearest_exact3d -vs
+_weight_int4pack_mm,python -m pytest tests/test_special_ops.py -m weight_int4pack_mm -vs,Manual benchmark - PyTorch reference not available for this operator
+_weight_int4pack_mm_for_cpu,python -m pytest tests/test_blas_ops.py -m weight_int4pack_mm -vs,N/A - pass-through implementation
+_weight_int4pack_mm_with_scales_and_zeros,python -m pytest tests/test_blas_ops.py -m weight_int4pack_mm -vs,python -m pytest benchmark/test_blas_perf.py -m weight_int4pack_mm -vs
+_weight_int8pack_mm,python -m pytest tests/test_special_ops.py -m weight_int8pack_mm -vs,python -m pytest benchmark/test_special_perf.py -m weight_int8pack_mm -vs
+_weight_norm,python -m pytest tests/test_norm_ops.py -m weight_norm -vs,python -m pytest benchmark/test_norm_perf.py::test_weight_vector_norm_benchmark -vs
+acos_,python -m pytest tests/test_unary_pointwise_ops.py -m acos_ -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m acos_ -vs
+acosh,python -m pytest tests/test_unary_pointwise_ops.py -m acosh -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m acosh -vs
+acosh_,python -m pytest tests/test_unary_pointwise_ops.py -m acosh_ -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_unary_pointwise_perf.py -m acosh_ -vs
+adaptive_max_pool2d,python -m pytest tests/test_reduction_ops.py -m adaptive_max_pool2d -vs && python -m pytest tests/test_reduction_ops.py -m adaptive_max_pool2d_backward -vs,python -m pytest benchmark/test_reduction_perf.py -m adaptive_max_pool2d -vs
+adaptive_max_pool3d,python -m pytest tests/test_reduction_ops.py -m adaptive_max_pool3d -vs,python -m pytest benchmark/test_reduction_perf.py -m adaptive_max_pool3d -vs
+adaptive_max_pool3d_backward,python -m pytest tests/test_special_ops.py -m adaptive_max_pool3d_backward -vs,python -m pytest benchmark/test_special_perf.py -m adaptive_max_pool3d_backward -vs
+addbmm,python -m pytest tests/test_blas_ops.py -m addbmm -vs,python -m pytest benchmark/test_blas_perf.py -m addbmm -vs
+addbmm_,python -m pytest tests/test_blas_ops.py -m addbmm_ -vs && python -m pytest tests/test_blas_ops.py -m addbmm -vs,python -m pytest benchmark/test_blas_perf.py -m addbmm -vs
+addcdiv_,python -m pytest tests/test_binary_pointwise_ops.py -m addcdiv_ -vs,python -m pytest benchmark/test_generic_pointwise_perf.py -m addcdiv_ -vs
+addmm_,python -m pytest tests/test_blas_ops.py -m addmm_ -vs,python -m pytest benchmark/test_blas_perf.py -m addmm_ -vs
+addmv,python -m pytest tests/test_blas_ops.py -m addmv -vs && python -m pytest tests/test_blas_ops.py -m addmv_out -vs,python -m pytest benchmark/test_blas_perf.py -m addmv -vs
+addmv_,python -m pytest tests/test_blas_ops.py -m addmv_ -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_blas_perf.py -m addmv_ -vs
+affine_grid_generator,python -m pytest tests/test_special_ops.py -m affine_grid_generator -vs,python -m pytest benchmark/test_special_perf.py -m affine_grid_generator -vs
+alias,python -m pytest tests/test_unary_pointwise_ops.py -m alias -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m alias -vs
+alpha_dropout,python -m pytest tests/test_special_ops.py -m alpha_dropout -vs,python -m pytest benchmark/test_distribution_perf.py -m alpha_dropout -vs
+amin,python -m pytest tests/test_reduction_ops.py -m amin -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_reduction_perf.py -m amin -vs
+aminmax,python -m pytest tests/test_reduction_ops.py -m aminmax -vs,python -m pytest benchmark/test_reduction_perf.py -m aminmax -vs
+arccos,python -m pytest tests/test_unary_pointwise_ops.py -m arccos -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_unary_pointwise_perf.py -m arccos -vs
+arccos_,python -m pytest tests/test_unary_pointwise_ops.py -m arccos_ -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m arccos_ -vs
+arccosh_,python -m pytest tests/test_unary_pointwise_ops.py -m arccosh_ -vs && python -m pytest tests/test_unary_pointwise_ops.py -m arccosh__ -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m arccosh_ -vs
+arcsin,python -m pytest tests/test_unary_pointwise_ops.py -m arcsin -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m arcsin -vs
+arcsin_,python -m pytest tests/test_unary_pointwise_ops.py -m arcsin_ -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m arcsin_ -vs
+arctan,python -m pytest tests/test_unary_pointwise_ops.py -m arctan -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m arctan -vs
+arctan2,python -m pytest tests/test_binary_pointwise_ops.py -m arctan2 -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m arctan2 -vs
+arctan2_,python -m pytest tests/test_binary_pointwise_ops.py -m arctan2_ -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_binary_pointwise_perf.py -m arctan2_ -vs
+arctan_,python -m pytest tests/test_unary_pointwise_ops.py -m arctan_ -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m arctan_ -vs
+argsort,python -m pytest tests/test_special_ops.py -m argsort -vs,Manual benchmark (not added to benchmark file due to shape limitations)
+as_strided,python -m pytest tests/test_special_ops.py -m "as_strided or as_strided_" -vs,python -m pytest benchmark/test_special_perf.py -m as_strided -vs
+as_strided_,python -m pytest tests/test_special_ops.py -m as_strided_ -vs,python -m pytest benchmark/test_special_perf.py -m as_strided_ -vs
+as_strided_copy,CUDA_VISIBLE_DEVICES=0 /usr/bin/python3 -m pytest tests/test_unary_pointwise_ops.py -m as_strided_copy -vs --log-cli-level=DEBUG,CUDA_VISIBLE_DEVICES=0 /usr/bin/python3 -m pytest benchmark/test_unary_pointwise_perf.py -m as_strided_copy -vs
+as_strided_scatter,python -m pytest tests/test_special_ops.py -m as_strided_scatter -vs,python -m pytest benchmark/test_special_perf.py -m as_strided_scatter -vs
+asin,python -m pytest tests/test_unary_pointwise_ops.py -m asin -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m asin -vs
+asin_,python -m pytest tests/test_unary_pointwise_ops.py -m asin_ -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_unary_pointwise_perf.py -m asin_ -vs
+asinh,python -m pytest tests/test_unary_pointwise_ops.py -m asinh -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m asinh -vs
+atan2,python -m pytest tests/test_binary_pointwise_ops.py -m atan2 -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m atan2 -vs
+atan2_,python -m pytest tests/test_binary_pointwise_ops.py -m atan2_ -vs && python -m pytest tests/test_binary_pointwise_ops.py -m atan2__ -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m atan2_ -vs
+atanh,python -m pytest tests/test_unary_pointwise_ops.py -m atanh -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m atanh -vs
+avg_pool3d,python -m pytest tests/test_reduction_ops.py -m avg_pool3d -vs && python -m pytest tests/test_reduction_ops.py -m avg_pool3d_bwd -vs,python -m pytest benchmark/test_reduction_perf.py -m avg_pool3d -vs
+avg_pool3d_backward,python -m pytest tests/test_reduction_ops.py -m avg_pool3d_backward -vs,python -m pytest benchmark/test_reduction_perf.py -m avg_pool3d_backward -vs
+baddbmm_,python -m pytest tests/test_blas_ops.py -m baddbmm_ -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_blas_perf.py -m baddbmm_ --level=core -vs
+batch_norm_backward,python -m pytest benchmark/test_norm_perf.py -m batch_norm -vs,python -m pytest benchmark/test_norm_perf.py -m batch_norm -vs
+bernoulli,python -m pytest tests/test_special_ops.py -m bernoulli -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_distribution_perf.py -m bernoulli -vs
+binary_cross_entropy,python -m pytest tests/test_reduction_ops.py -m binary_cross_entropy -vs,python -m pytest benchmark/test_reduction_perf.py -m binary_cross_entropy -vs
+binary_cross_entropy_backward,python -m pytest tests/test_special_ops.py -m binary_cross_entropy_backward -vs,python -m pytest benchmark/test_special_perf.py -m binary_cross_entropy_backward -vs
+binary_cross_entropy_with_logits,python -m pytest tests/test_binary_pointwise_ops.py -m binary_cross_entropy_with_logits -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m binary_cross_entropy_with_logits -vs
+bincount,python -m pytest tests/test_reduction_ops.py -m bincount -vs,python -m pytest benchmark/test_reduction_perf.py -m bincount -vs
+bitwise_and,python -m pytest tests/test_binary_pointwise_ops.py -m bitwise_and -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m bitwise_and -vs
+bitwise_left_shift_,python -m pytest tests/test_unary_pointwise_ops.py -m bitwise_left_shift -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m bitwise_left_shift -vs
+bitwise_right_shift_,python -m pytest tests/test_unary_pointwise_ops.py -m bitwise_right_shift_ -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m bitwise_right_shift -vs
+bitwise_xor,python -m pytest tests/test_binary_pointwise_ops.py -m bitwise_xor -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m bitwise_xor -vs
+bitwise_xor_,python -m pytest tests/test_binary_pointwise_ops.py -m bitwise_xor -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m bitwise_xor -vs && python -m pytest benchmark/test_binary_pointwise_perf.py -m bitwise_xor_ -vs
+broadcast_tensors,python -m pytest tests/test_special_ops.py -m broadcast_tensors -vs,python -m pytest benchmark/test_special_perf.py -m broadcast_tensors -vs
+broadcast_to,python -m pytest tests/test_special_ops.py -m broadcast_to -vs,python -m pytest benchmark/test_special_perf.py -m broadcast_to -vs
+bucketize,python -m pytest tests/test_binary_pointwise_ops.py -m bucketize -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m bucketize -vs
+cat,python -m pytest tests/test_special_ops.py -m cat -vs,python -m pytest benchmark/test_tensor_concat_perf.py -m cat -vs
+cauchy,python -m pytest tests/test_distribution_ops.py -m cauchy -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_distribution_perf.py -m cauchy -vs
+cauchy_,python -m pytest tests/test_distribution_ops.py -m cauchy_ -vs,python -m pytest benchmark/test_distribution_perf.py -m cauchy_ -vs
+ceil_,python -m pytest tests/test_unary_pointwise_ops.py -m ceil_ -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m ceil_ -vs
+channel_shuffle,python -m pytest tests/test_special_ops.py -m channel_shuffle -vs,python -m pytest benchmark/test_special_perf.py -m channel_shuffle -vs
+cholesky,python -m pytest tests/test_special_ops.py -m cholesky -vs,python -m pytest benchmark/test_special_perf.py -m cholesky -vs
+cholesky_inverse,python -m pytest tests/test_blas_ops.py -m cholesky_inverse -k dtype1 -vs,python -m pytest benchmark/test_blas_perf.py -m cholesky_inverse -vs
+cholesky_solve,python -m pytest tests/test_blas_ops.py -m cholesky_solve -vs,python -m pytest benchmark/test_blas_perf.py -m cholesky_solve -vs
+clamp_max,python -m pytest tests/test_binary_pointwise_ops.py -m clamp_max -vs && python -m pytest tests/test_binary_pointwise_ops.py -m clamp_max_ -vs,python -m pytest benchmark/test_generic_pointwise_perf.py -m clamp_max -vs && python -m pytest benchmark/test_generic_pointwise_perf.py -m clamp_max_ -vs
+clip_,python -m pytest tests/test_binary_pointwise_ops.py -m clip -vs,python -m pytest benchmark/test_generic_pointwise_perf.py -m clip -vs
+clone,CUDA_VISIBLE_DEVICES=5 /usr/bin/python3 -m pytest tests/test_unary_pointwise_ops.py -m clone -vs,CUDA_VISIBLE_DEVICES=5 /usr/bin/python3 -m pytest benchmark/test_unary_pointwise_perf.py -m clone -vs
+complex,python -m pytest tests/test_binary_pointwise_ops.py -m complex -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m complex -vs
+conj,python -m pytest tests/test_unary_pointwise_ops.py -m conj -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m conj -vs
+conj_physical,python -m pytest tests/test_special_ops.py -m conj_physical -vs,python -m pytest benchmark/test_special_perf.py -m conj_physical -vs
+conj_physical_,python -m pytest tests/test_unary_pointwise_ops.py -m conj_physical_ -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m conj_physical_ -vs
+convolution,python -m pytest tests/test_convolution_ops.py -m convolution -vs,python -m pytest benchmark/test_convolution_perf.py -m convolution -vs
+convolution_backward,python -m pytest tests/test_special_ops.py -m convolution_backward -vs,python -m pytest benchmark/test_convolution_perf.py -m convolution_backward -vs
+copy,CUDA_VISIBLE_DEVICES=5 /usr/bin/python3 -m pytest tests/test_binary_pointwise_ops.py -m 'copy or copy_' -vs --log-cli-level=DEBUG,CUDA_VISIBLE_DEVICES=5 /usr/bin/python3 -m pytest benchmark/test_binary_pointwise_perf.py -m 'copy or copy_' -vs
+copysign,python -m pytest tests/test_binary_pointwise_ops.py -m copysign -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m copysign -vs
+copysign_,python -m pytest tests/test_binary_pointwise_ops.py -m copysign_ -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_binary_pointwise_perf.py -m copysign_ -vs
+cos,python -m pytest tests/test_unary_pointwise_ops.py -m cos -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m cos -vs
+cosh,python -m pytest tests/test_unary_pointwise_ops.py -m cosh -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_unary_pointwise_perf.py -m cosh -vs
+cross_attention,python -m pytest tests/test_special_ops.py -m cross_attention -vs,python -m pytest benchmark/test_attention_perf.py -m cross_attention -vs
+cudnnActivateion,python -m pytest tests/test_unary_pointwise_ops.py -m cudnnActivateion -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m cudnnActivateion -vs
+cudnnActivateionbwd,CUDA_VISIBLE_DEVICES=3 /usr/bin/python3 -m pytest tests/test_unary_pointwise_ops.py -m cudnnActivateionbwd -vs,CUDA_VISIBLE_DEVICES=3 /usr/bin/python3 -m pytest benchmark/test_unary_pointwise_perf.py -m cudnnActivateionbwd -vs
+cudnn_batch_norm,python -m pytest tests/test_norm_ops.py -m cudnn_batch_norm -vs,python -m pytest benchmark/test_norm_perf.py -m cudnn_batch_norm -vs
+cudnn_batch_norm_backward,python -m pytest tests/test_norm_ops.py -m cudnn_batch_norm_backward -vs,python -m pytest benchmark/test_norm_perf.py -m cudnn_batch_norm_backward -vs
+cudnn_convolution,python -m pytest tests/test_convolution_ops.py -m cudnn_convolution -vs,python -m pytest benchmark/test_convolution_perf.py -m cudnn_convolution -vs
+cudnn_convolution_transpose,python -m pytest tests/test_convolution_ops.py -m cudnn_convolution_transpose -vs,python -m pytest benchmark/test_convolution_perf.py -m cudnn_convolution_transpose -vs
+cudnnconvbwd,python -m pytest tests/test_convolution_ops.py -m cudnnconvbwd -vs,python -m pytest benchmark/test_convolution_perf.py -m cudnnconvbwd -vs
+cudnnconvfilter,python -m pytest tests/test_unary_pointwise_ops.py -m cudnnconvfilter -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m cudnnconvfilter -vs
+cumprod,python -m pytest tests/test_reduction_ops.py -m cumprod -vs,python -m pytest benchmark/test_reduction_perf.py -m cumprod -vs
+cumprod_,python -m pytest tests/test_reduction_ops.py -m cumprod_ -vs,python -m pytest benchmark/test_reduction_perf.py -m cumprod_ -vs
+cumsum_,python -m pytest tests/test_reduction_ops.py -m cumsum_ -vs,python -m pytest benchmark/test_reduction_perf.py -m cumsum_ -vs
+dequantize,python -m pytest tests/test_special_ops.py -m dequantize -vs,python -m pytest benchmark/test_special_perf.py -m dequantize -vs
+detach,python -m pytest tests/test_unary_pointwise_ops.py -m detach -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m detach -vs
+detach_,python -m pytest tests/test_unary_pointwise_ops.py -m detach_ -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m detach_ -vs
+diagonal_copy,python -m pytest tests/test_special_ops.py -m diagonal_copy -vs,python -m pytest benchmark/test_special_perf.py -m diagonal_copy -vs
+diagonal_scatter,python -m pytest tests/test_special_ops.py -m diagonal_scatter -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m diagonal_scatter -vs
+diff,python -m pytest tests/test_special_ops.py -m diff -vs,python -m pytest benchmark/test_special_perf.py -m diff -vs
+digamma,python -m pytest tests/test_unary_pointwise_ops.py -m digamma -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m digamma -vs && python -m pytest benchmark/test_unary_pointwise_perf.py -m digamma_ -vs
+dist,python -m pytest tests/test_special_ops.py -m dist -vs,python -m pytest benchmark/test_special_perf.py -m dist -vs
+div,python -m pytest tests/test_binary_pointwise_ops.py -k div -v,python -m pytest benchmark/test_binary_pointwise_perf.py -k div -v
+divide,python -m pytest tests/test_binary_pointwise_ops.py -m divide -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m div -vs
+embeddingSpMDM,python -m pytest tests/test_special_ops.py -m embeddingSpMDM -vs,python -m pytest benchmark/test_special_perf.py -m embeddingSpMDM -vs
+embeddingSpMDMGrad,python -m pytest tests/test_special_ops.py -m embeddingSpMDMGrad -vs,python -m pytest benchmark/test_special_perf.py -m embeddingSpMDMGrad -vs
+embedding_dense_backward,python -m pytest tests/test_special_ops.py -m embedding_dense_backward -vs,python -m pytest benchmark/test_special_perf.py -m embedding_dense_backward -vs
+embedingBagCollection,python -m pytest tests/test_special_ops.py -m embedingBagCollection -vs,python -m pytest benchmark/test_special_perf.py -m embedingBagCollection -vs
+empty,python -m pytest tests/test_special_ops.py -m empty -vs,python -m pytest benchmark/test_special_perf.py -m empty -vs
+empty_like,python -m pytest tests/test_tensor_constructor_ops.py -m empty_like -vs,python -m pytest benchmark/test_tensor_constructor_perf.py -m empty_like -vs
+empty_strided,python -m pytest tests/test_tensor_constructor_ops.py -m empty_strided -vs,python -m pytest benchmark/test_tensor_constructor_perf.py -m empty_strided -vs
+eq,python -m pytest tests/test_binary_pointwise_ops.py -m eq -vs && python -m pytest tests/test_binary_pointwise_ops.py -m equal -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m eq -vs
+erfc,python -m pytest tests/test_unary_pointwise_ops.py -m 'erfc or erfc_' -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_unary_pointwise_perf.py -m 'erfc or erfc_' -vs
+erfc_,python -m pytest tests/test_unary_pointwise_ops.py -m 'erfc or erfc_' -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m 'erfc or erfc_' -vs
+erfinv_,CUDA_VISIBLE_DEVICES=0 python -m pytest tests/test_unary_pointwise_ops.py -m 'erfinv or erfinv_' -vs,CUDA_VISIBLE_DEVICES=0 python -m pytest benchmark/test_unary_pointwise_perf.py -m 'erfinv or erfinv_' -vs
+expand,python -m pytest tests/test_special_ops.py -m expand -vs,python -m pytest benchmark/test_special_perf.py -m expand -vs
+expand_copy,python -m pytest tests/test_unary_pointwise_ops.py -m expand_copy -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m expand_copy -vs
+expm1,python -m pytest tests/test_unary_pointwise_ops.py -m expm1 -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m 'expm1 or expm1_' -vs
+expm1_,python -m pytest tests/test_unary_pointwise_ops.py -m expm1_ -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_unary_pointwise_perf.py -m expm1_ -vs
+exponential,python -m pytest tests/test_distribution_ops.py -m exponential -vs,python -m pytest benchmark/test_distribution_perf.py -m exponential -vs
+exponential_,python -m pytest tests/test_distribution_ops.py -m exponential_ -vs,python -m pytest benchmark/test_distribution_perf.py -m exponential_ -vs
+feature_dropout,python -m pytest tests/test_special_ops.py -m feature_dropout -vs,python -m pytest benchmark/test_special_perf.py -m feature_dropout -vs
+fft_fft,python -m pytest tests/test_special_ops.py -m fft_fft -vs,python -m pytest benchmark/test_special_perf.py -m fft_fft -vs
+fft_fft2,python -m pytest tests/test_special_ops.py -m fft_fft2 -vs,python -m pytest benchmark/test_special_perf.py -m fft_fft2 -vs
+fft_fftfreq,python -m pytest tests/test_special_ops.py -m fft_fftfreq -vs,python -m pytest benchmark/test_special_perf.py -m fft_fftfreq -vs
+fft_fftshift,python -m pytest tests/test_special_ops.py -m fft_fftshift -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m fft_fftshift -vs
+fft_hfft,python -m pytest tests/test_special_ops.py -m fft_hfft -vs,N/A - operator not registered to avoid dispatcher recursion
+fft_hfft2,python -m pytest tests/test_special_ops.py -m fft_hfft2 -vs,python -m pytest benchmark/test_special_perf.py -m fft_hfft2 -vs
+fft_hfftn,python -m pytest tests/test_special_ops.py -m fft_hfftn -vs,python -m pytest benchmark/test_special_perf.py -m fft_hfftn -vs
+fft_ifft,python -m pytest tests/test_special_ops.py -m fft_ifft -vs,python -c "..." (manual benchmark)
+fft_ifft2,python -m pytest tests/test_special_ops.py -m fft_ifft2 -vs,python -m pytest benchmark/test_special_perf.py -m fft_ifft2 -vs
+fft_ifftn,python -m pytest tests/test_special_ops.py -m fft_ifftn -vs && python -m pytest tests/test_special_ops.py -m fft_fftn -vs,python -m pytest benchmark/test_special_perf.py -m fft_ifftn -vs && python -m pytest benchmark/test_special_perf.py -m fft_fftn -vs
+fft_ifftshift,python -m pytest tests/test_unary_pointwise_ops.py -m fft_ifftshift -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m fft_ifftshift -vs
+fft_ihfft,python -m pytest tests/test_special_ops.py -m fft_ihfft -vs,python -m pytest benchmark/test_special_perf.py -m fft_ihfft -vs
+fft_ihfft2,python -m pytest tests/test_special_ops.py -m fft_ihfft2 -vs,python -m pytest benchmark/test_special_perf.py -m fft_ihfft2 -vs
+fft_ihfftn,python -m pytest tests/test_special_ops.py -m fft_ihfftn -vs,python -m pytest benchmark/test_special_perf.py -m fft_ihfftn -vs
+fft_irfft,python -m pytest tests/test_special_ops.py -m fft_irfft -vs,python benchmark/fft_irfft_simple.py
+fft_irfft2,python -m pytest tests/test_special_ops.py -m fft_irfft2 -vs,python -m pytest benchmark/test_special_perf.py -m fft_irfft2 -vs
+fft_irfftn,python -m pytest tests/test_special_ops.py -m fft_irfftn -vs,python -m pytest benchmark/test_special_perf.py -m fft_irfftn -vs
+fft_rfft2,python -m pytest tests/test_special_ops.py -m fft_rfft2 -vs,python -m pytest benchmark/test_special_perf.py -m fft_rfft2 -vs
+fft_rfftfreq,python -m pytest tests/test_special_ops.py -m fft_rfftfreq -vs,python -m pytest benchmark/test_special_perf.py -m fft_rfftfreq -vs
+fft_rfftn,python -m pytest tests/test_special_ops.py -m fft_rfftn -vs,python -m pytest benchmark/test_special_perf.py -m fft_rfftn -vs
+flip,CUDA_VISIBLE_DEVICES=4 /usr/bin/python3 -m pytest tests/test_unary_pointwise_ops.py -m flip -vs --log-cli-level=DEBUG,CUDA_VISIBLE_DEVICES=4 /usr/bin/python3 -m pytest benchmark/test_generic_pointwise_perf.py -m flip -vs
+float_power_,python -m pytest tests/test_binary_pointwise_ops.py -m float_power_ -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m float_power_ -vs
+fmax,python -m pytest tests/test_binary_pointwise_ops.py -m fmax -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m fmax -vs
+fmod_,python -m pytest tests/test_binary_pointwise_ops.py -m fmod_ -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m fmod -vs
+frac_,python -m pytest tests/test_unary_pointwise_ops.py -m 'frac or frac_' -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m 'frac or frac_' -vs
+fractional_max_pool2d,python -m pytest tests/test_reduction_ops.py -m fractional_max_pool2d -vs,python -m pytest benchmark/test_reduction_perf.py -m fractional_max_pool2d -vs
+frexp,python -m pytest tests/test_unary_pointwise_ops.py -m frexp -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m frexp -vs
+full,python -m pytest tests/test_tensor_constructor_ops.py -m full -vs,python -m pytest benchmark/test_tensor_constructor_perf.py -m full -vs
+full_like,python -m pytest tests/test_tensor_constructor_ops.py -m full_like -vs,python -m pytest benchmark/test_tensor_constructor_perf.py -m full_like -vs
+gcd,python -m pytest tests/test_binary_pointwise_ops.py -m gcd -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m gcd -vs
+gcd_,python -m pytest tests/test_binary_pointwise_ops.py -m 'gcd or gcd_' -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m gcd -vs
+geometric,python -m pytest tests/test_distribution_ops.py -m geometric -vs,python -m pytest benchmark/test_distribution_perf.py -m geometric -vs
+geometric_,CUDA_VISIBLE_DEVICES=2 /usr/bin/python3 -m pytest tests/test_distribution_ops.py -m geometric_ -vs --log-cli-level=DEBUG,CUDA_VISIBLE_DEVICES=2 /usr/bin/python3 -m pytest benchmark/test_distribution_perf.py -m geometric_ -vs
+greater_equal,python -m pytest tests/test_binary_pointwise_ops.py -m ge -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m ge -vs
+grid_sampler_2d,python -m pytest tests/test_special_ops.py -m grid_sampler_2d -vs,python -m pytest benchmark/test_special_perf.py -m grid_sampler_2d -vs
+grid_sampler_2d_backward,python -m pytest tests/test_special_ops.py -m grid_sampler_2d_backward -vs,python -m pytest benchmark/test_special_perf.py -m grid_sampler_2d_backward -vs
+grid_sampler_3d,python -m pytest tests/test_special_ops.py -m grid_sampler_3d -vs,python -m pytest benchmark/test_special_perf.py -m grid_sampler_3d -vs
+grid_sampler_3d_backward,python -m pytest tests/test_special_ops.py -m grid_sampler_3d_backward -vs,python -m pytest benchmark/test_special_perf.py -m grid_sampler_3d_backward -vs
+gru,python -m pytest tests/test_special_ops.py -m gru -vs,python -m pytest benchmark/test_special_perf.py -m gru -vs
+gt_,python -m pytest tests/test_binary_pointwise_ops.py -m gt_ -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m gt_ -vs
+histc,python -m pytest tests/test_special_ops.py -m histc -vs,python -m pytest benchmark/test_special_perf.py -m histc -vs
+hstack,python -m pytest tests/test_special_ops.py -m hstack -vs,python -m pytest benchmark/test_tensor_concat_perf.py -m hstack -vs
+huber_loss_backward,python -m pytest tests/test_special_ops.py -m huber_loss_backward -vs,python -m pytest benchmark/test_special_perf.py -m huber_loss_backward -vs
+igamma,python -m pytest tests/test_binary_pointwise_ops.py -m igamma -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m igamma -vs
+igamma_,python -m pytest tests/test_binary_pointwise_ops.py -m igamma_ -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m igamma_ -vs
+igammac,python -m pytest tests/test_binary_pointwise_ops.py -m igammac -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m igammac -vs
+igammac_,python -m pytest tests/test_binary_pointwise_ops.py -m igammac -vs && python -m pytest tests/test_binary_pointwise_ops.py -m igammac_ -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m igammac -vs
+im2col,python -m pytest tests/test_special_ops.py -m im2col -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m im2col -vs
+imag,python -m pytest tests/test_unary_pointwise_ops.py -m imag -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m imag -vs
+index_copy,python -m pytest tests/test_reduction_ops.py -m index_copy -vs,python -m pytest benchmark/test_select_and_slice_perf.py -m index_copy -vs
+index_copy_,python -m pytest tests/test_reduction_ops.py -m index_copy or index_copy_ -vs,python -m pytest benchmark/test_select_and_slice_perf.py -m index_copy or index_copy_ -vs
+index_fill,python -m pytest tests/test_reduction_ops.py -m index_fill -vs,python -m pytest benchmark/test_select_and_slice_perf.py -m index_fill -vs
+index_fill_,python -m pytest tests/test_reduction_ops.py -m index_fill_ or index_fill -vs,python -m pytest benchmark/test_select_and_slice_perf.py -m index_fill_ or index_fill -vs
+index_reduce,python -m pytest tests/test_reduction_ops.py -m 'index_reduce or index_reduce_' -v,python -m pytest benchmark/test_select_and_slice_perf.py -m index_reduce -vs
+index_reduce_,python -m pytest tests/test_reduction_ops.py -m 'index_reduce or index_reduce_' -q,python -m pytest benchmark/test_select_and_slice_perf.py -m 'index_reduce or index_reduce_' -vs
+index_select_backward,python -m pytest tests/test_reduction_ops.py -m index_select_backward -vs,python -m pytest benchmark/test_select_and_slice_perf.py -m index_select_backward -vs
+is_coalesced,python -m pytest tests/test_special_ops.py -m is_coalesced -vs,python -m pytest benchmark/test_special_perf.py -m is_coalesced -vs
+is_non_overlapping_and_dense,python -m pytest tests/test_special_ops.py -m is_non_overlapping_and_dense -vs,python -m pytest benchmark/test_special_perf.py -m is_non_overlapping_and_dense -vs
+is_nonzero,CUDA_VISIBLE_DEVICES=6 /usr/bin/python3 -m pytest tests/test_special_ops.py -m is_nonzero -vs,CUDA_VISIBLE_DEVICES=6 /usr/bin/python3 -m pytest benchmark/test_special_perf.py -m is_nonzero -vs
+is_same_size,python -m pytest tests/test_binary_pointwise_ops.py -m is_same_size -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m is_same_size -vs
+is_strides_like_format,python -m pytest tests/test_special_ops.py -m is_strides_like_format -vs,manual benchmark - see data below
+isposinf,python -m pytest tests/test_unary_pointwise_ops.py -m isposinf -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m isposinf -vs
+istft,python -m pytest tests/test_special_ops.py -m istft -vs,python -m pytest benchmark/test_special_perf.py -m istft -vs
+item,python -m pytest tests/test_special_ops.py -m item -vs,python -m pytest benchmark/test_special_perf.py -m item -vs
+kthvalue,python -m pytest tests/test_reduction_ops.py -m kthvalue -v,python -m pytest benchmark/test_special_perf.py -m kthvalue -vs
+lcm,python -m pytest tests/test_binary_pointwise_ops.py -m lcm -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m lcm -vs
+lcm_,python -m pytest tests/test_binary_pointwise_ops.py -m 'lcm or lcm_' -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m lcm -vs
+less,python -m pytest tests/test_binary_pointwise_ops.py -m less -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m less -vs
+less_equal,python -m pytest tests/test_binary_pointwise_ops.py -m less_equal -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m less_equal -vs
+lgamma,python -m pytest tests/test_unary_pointwise_ops.py -m lgamma -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m lgamma -vs
+lgamma_,python -m pytest tests/test_unary_pointwise_ops.py -m lgamma_ -vs && python -m pytest tests/test_unary_pointwise_ops.py -m lgamma -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m lgamma_ -vs && python -m pytest benchmark/test_unary_pointwise_perf.py -m lgamma -vs
+lift,python -m pytest tests/test_unary_pointwise_ops.py -m "lift or lift_out" -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m lift -vs
+lift_fresh,python -m pytest tests/test_special_ops.py -m lift_fresh -vs,python -m pytest benchmark/test_special_perf.py -m lift_fresh -vs
+linalg_cholesky,python -m pytest tests/test_special_ops.py -m cholesky -vs,python -m pytest benchmark/test_special_perf.py -m cholesky -vs
+linalg_cholesky_ex,python -m pytest tests/test_special_ops.py -m linalg_cholesky_ex -vs,python -m pytest benchmark/test_special_perf.py -m linalg_cholesky_ex -vs
+linalg_cond,python -m pytest tests/test_special_ops.py -m linalg_cond -vs,python -m pytest benchmark/test_special_perf.py -m linalg_cond -vs
+linalg_cross,python -m pytest tests/test_blas_ops.py -m linalg_cross -vs,python -m pytest benchmark/test_blas_perf.py -m linalg_cross -vs
+linalg_det,python -m pytest tests/test_special_ops.py -m linalg_det -vs,python -m pytest benchmark/test_special_perf.py -m linalg_det -vs
+linalg_diagonal,python -m pytest tests/test_special_ops.py -m linalg_diagonal -vs,python -m pytest benchmark/test_special_perf.py -m linalg_diagonal -vs
+linalg_eig,python -m pytest tests/test_special_ops.py -m linalg_eig -vs,python -m pytest benchmark/test_special_perf.py -m linalg_eig -vs
+linalg_eigh,python -m pytest tests/test_special_ops.py -m linalg_eigh -vs,python -m pytest benchmark/test_special_perf.py -m linalg_eigh -vs
+linalg_eigvals,python -m pytest tests/test_special_ops.py -m linalg_eigvals -vs,python -m pytest benchmark/test_special_perf.py -m linalg_eigvals -vs
+linalg_eigvalsh,python -m pytest tests/test_special_ops.py -m linalg_eigvalsh -vs,python -m pytest benchmark/test_special_perf.py -m linalg_eigvalsh -vs
+linalg_householder_product,python -m pytest tests/test_special_ops.py -m linalg_householder_product -vs,python -m pytest benchmark/test_special_perf.py -m linalg_householder_product -vs
+linalg_inv,python -m pytest tests/test_special_ops.py -m linalg_inv -vs,python -m pytest benchmark/test_special_perf.py -m linalg_inv -vs
+linalg_inv_ex,python -m pytest tests/test_blas_ops.py -m linalg_inv_ex -vs,python -m pytest benchmark/test_blas_perf.py -m linalg_inv_ex -vs
+linalg_ldl_factor,python -m pytest tests/test_special_ops.py -m linalg_ldl_factor -vs,python -m pytest benchmark/test_special_perf.py -m linalg_ldl_factor -vs
+linalg_ldl_factor_ex,python -m pytest tests/test_special_ops.py -m linalg_ldl_factor_ex -vs,Manual benchmark (standard pytest benchmark has compatibility issues with tuple-returning functions)
+linalg_ldl_solve,python -m pytest tests/test_special_ops.py -m linalg_ldl_solve -vs,python -m pytest benchmark/test_special_perf.py -m linalg_ldl_solve -vs
+linalg_lstsq,python -m pytest tests/test_special_ops.py -m linalg_lstsq -vs,python -m pytest benchmark/test_special_perf.py -m linalg_lstsq -vs
+linalg_lu,python -m pytest tests/test_special_ops.py -m linalg_lu -vs,python -m pytest benchmark/test_special_perf.py -m linalg_lu -vs
+linalg_lu_factor,python -m pytest tests/test_special_ops.py -m linalg_lu_factor -vs,python -m pytest benchmark/test_special_perf.py -m linalg_lu_factor -vs
+linalg_lu_factor_ex,python -m pytest tests/test_special_ops.py -m linalg_lu_factor_ex -vs,python -m pytest benchmark/test_special_perf.py -m linalg_lu_factor_ex -vs
+linalg_lu_solve,python -m pytest tests/test_blas_ops.py -m linalg_lu_solve -vs,python -m pytest benchmark/test_blas_perf.py -m linalg_lu_solve -vs
+linalg_matmul,python -m pytest tests/test_blas_ops.py -m linalg_matmul -vs,python -m pytest benchmark/test_blas_perf.py -m linalg_matmul -vs
+linalg_matrix_exp,python -m pytest tests/test_special_ops.py -m linalg_matrix_exp -vs,python -m pytest benchmark/test_special_perf.py -m linalg_matrix_exp -vs
+linalg_matrix_norm,python -m pytest tests/test_norm_ops.py -m linalg_matrix_norm -vs,python -m pytest benchmark/test_norm_perf.py -m linalg_matrix_norm -vs
+linalg_matrix_power,python -m pytest tests/test_blas_ops.py -m linalg_matrix_power -vs,python -m pytest benchmark/test_blas_perf.py -m linalg_matrix_power -vs
+linalg_matrix_rank,python -m pytest tests/test_special_ops.py -m linalg_matrix_rank -vs,python -m pytest benchmark/test_special_perf.py -m linalg_matrix_rank -vs
+linalg_multi_dot,python -m pytest tests/test_blas_ops.py -m linalg_multi_dot -vs,python -m pytest benchmark/test_blas_perf.py -m linalg_multi_dot -vs
+linalg_norm,python -m pytest tests/test_norm_ops.py -m linalg_norm -vs,python -m pytest benchmark/test_norm_perf.py -m linalg_norm -vs
+linalg_pinv,python -m pytest tests/test_special_ops.py -m linalg_pinv -vs,python -m pytest benchmark/test_special_perf.py -m linalg_pinv -vs
+linalg_qr,python -m pytest tests/test_special_ops.py -m linalg_qr -vs,python -m pytest benchmark/test_special_perf.py -m linalg_qr -vs
+linalg_slogdet,python -m pytest tests/test_special_ops.py -m linalg_slogdet -vs,python -m pytest benchmark/test_special_perf.py -m linalg_slogdet -vs
+linalg_solve,python -m pytest tests/test_special_ops.py -m linalg_solve -vs,python -m pytest benchmark/test_blas_perf.py -m linalg_solve -vs
+linalg_solve_ex,CUDA_VISIBLE_DEVICES=0 /usr/bin/python3 -m pytest tests/test_special_ops.py -m linalg_solve_ex -vs,CUDA_VISIBLE_DEVICES=0 /usr/bin/python3 -m pytest benchmark/test_special_perf.py -m linalg_solve_ex -vs
+linalg_solve_triangular,python -m pytest tests/test_blas_ops.py -m linalg_solve_triangular -vs,Manual benchmark (not part of pytest)
+linalg_svd,python -m pytest tests/test_special_ops.py -m linalg_svd -vs,python -m pytest benchmark/test_special_perf.py -m linalg_svd -vs
+linalg_svdvals,python -m pytest tests/test_special_ops.py -m linalg_svdvals -vs,python -m pytest benchmark/test_blas_perf.py -m linalg_svdvals -vs
+linalg_tensorinv,CUDA_VISIBLE_DEVICES=3 /usr/bin/python3 -m pytest tests/test_special_ops.py -m linalg_tensorinv -vs,CUDA_VISIBLE_DEVICES=3 /usr/bin/python3 -m pytest benchmark/test_special_perf.py -m linalg_tensorinv -vs
+linalg_tensorsolve,python -m pytest tests/test_special_ops.py -m linalg_tensorsolve -vs,python -m pytest benchmark/test_special_perf.py -m linalg_tensorsolve -vs
+linalg_vander,python -m pytest tests/test_special_ops.py -m linalg_vander -vs,python -m pytest benchmark/test_special_perf.py -m linalg_vander -vs
+linalg_vecdot,python -m pytest tests/test_blas_ops.py -m linalg_vecdot -vs,python -m pytest benchmark/test_blas_perf.py -m linalg_vecdot -vs
+linear,python -m pytest tests/test_blas_ops.py -m linear -vs,python -m pytest benchmark/test_blas_perf.py -m linear -vs
+linear_backward,CUDA_VISIBLE_DEVICES=2 python -m pytest tests/test_blas_ops.py -m linear_backward -vs,CUDA_VISIBLE_DEVICES=2 python -m pytest benchmark/test_special_perf.py -m linear_backward -vs
+log10,python -m pytest tests/test_unary_pointwise_ops.py -m log10 -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m log10 -vs
+log10_,python -m pytest tests/test_unary_pointwise_ops.py -m log10_ -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_unary_pointwise_perf.py -m log10_ -vs
+log2,python -m pytest tests/test_unary_pointwise_ops.py -m log2 -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m log2 -vs
+log_normal,python -m pytest tests/test_distribution_ops.py -m 'log_normal or log_normal_' -vs,python -m pytest benchmark/test_distribution_perf.py -m 'log_normal or log_normal_' -vs
+log_normal_,python -m pytest tests/test_distribution_ops.py -m log_normal_ -vs,python -m pytest benchmark/test_distribution_perf.py -m log_normal_ -vs
+log_sigmoid_backward,python -m pytest tests/test_binary_pointwise_ops.py -m log_sigmoid_backward -vs,python -m pytest benchmark/test_special_perf.py -m log_sigmoid_backward -vs
+log_sigmoid_forward,python -m pytest tests/test_unary_pointwise_ops.py -m log_sigmoid_forward -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m log_sigmoid_forward -vs
+logcumsumexp,python -m pytest tests/test_reduction_ops.py -m logcumsumexp -vs,python -m pytest benchmark/test_reduction_perf.py::test_generic_reduction_benchmark -m logcumsumexp -vs
+logical_and,CUDA_VISIBLE_DEVICES=3 python -m pytest tests/test_binary_pointwise_ops.py -m logical_and -vs --log-cli-level=DEBUG,CUDA_VISIBLE_DEVICES=3 python -m pytest benchmark/test_binary_pointwise_perf.py -m logical_and -vs
+logical_not_,python -m pytest tests/test_unary_pointwise_ops.py -m 'logical_not or logical_not_' -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m 'logical_not or logical_not_' -vs
+logical_or,python -m pytest tests/test_binary_pointwise_ops.py -m logical_or -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_binary_pointwise_perf.py -m logical_or -vs
+logical_or_,CUDA_VISIBLE_DEVICES=7 /usr/bin/python3 -m pytest tests/test_binary_pointwise_ops.py -m 'logical_or or logical_or_' -vs --log-cli-level=DEBUG,CUDA_VISIBLE_DEVICES=7 /usr/bin/python3 -m pytest benchmark/test_binary_pointwise_perf.py -m 'logical_or or logical_or_' -vs
+logical_xor,python -m pytest tests/test_binary_pointwise_ops.py -m logical_xor -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m logical_xor -vs
+logit_backward,python -m pytest tests/test_unary_pointwise_ops.py -m logit_backward -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m logit_backward -vs
+lstm,python -m pytest tests/test_special_ops.py -m lstm -vs,python -m pytest benchmark/test_special_perf.py -m lstm -vs
+lt,python -m pytest tests/test_binary_pointwise_ops.py -m lt -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m lt -vs
+lu_unpack,python -m pytest tests/test_special_ops.py -m lu_unpack -vs,python -m pytest benchmark/test_special_perf.py -m lu_unpack -vs
+masked_fill,python -m pytest tests/test_binary_pointwise_ops.py -m masked_fill -vs,python -m pytest benchmark/test_tensor_constructor_perf.py -m masked_fill -vs
+masked_scatter_,python -m pytest tests/test_reduction_ops.py -m masked_scatter_ -vs,python -m pytest benchmark/test_select_and_slice_perf.py -m masked_scatter_ -vs
+masked_scatter_backward,python -m pytest tests/test_special_ops.py -m masked_scatter_backward -vs,python -m pytest benchmark/test_special_perf.py -m masked_scatter_backward -vs
+matmul,CUDA_VISIBLE_DEVICES=6 python -m pytest tests/test_blas_ops.py -k matmul -vs,CUDA_VISIBLE_DEVICES=6 python -m pytest benchmark/test_blas_perf.py -m matmul -vs
+max_pool3d_with_indices,python -m pytest tests/test_reduction_ops.py -m 'max_pool3d or max_pool3d_backward' -vs,python -m pytest benchmark/test_reduction_perf.py -m max_pool3d -vs
+max_pool3d_with_indices_backward,python -m pytest tests/test_reduction_ops.py -m max_pool3d_with_indices_backward -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_reduction_perf.py -m max_pool3d_with_indices_backward -vs
+max_unpool2d,python -m pytest tests/test_special_ops.py -m max_unpool2d -vs,python -m pytest benchmark/test_special_perf.py -m max_unpool2d -vs
+max_unpool3d,python -m pytest tests/test_special_ops.py -m max_unpool3d -vs,python -m pytest benchmark/test_special_perf.py -m max_unpool3d -vs
+median,python -m pytest tests/test_reduction_ops.py -m median -vs,python -m pytest benchmark/test_reduction_perf.py -m median -vs
+meshgrid,python -m pytest tests/test_special_ops.py -m meshgrid -vs,python -m pytest benchmark/test_special_perf.py -m meshgrid -vs
+miopen_batch_norm,python -m pytest tests/test_norm_ops.py -m miopen_batch_norm -vs,python -m pytest benchmark/test_norm_perf.py -m miopen_batch_norm -vs
+miopen_batch_norm_backward,python -m pytest tests/test_norm_ops.py -m miopen_batch_norm_backward -vs,python -m pytest benchmark/test_norm_perf.py -m miopen_batch_norm_backward -vs
+mish_,python -m pytest tests/test_unary_pointwise_ops.py -m 'mish or mish_' -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m mish -vs
+mkldnn_rnn_layer,python -m pytest tests/test_special_ops.py -m mkldnn_rnn_layer -vs,N/A - complex RNN operator without standard benchmark pattern
+mkldnn_rnn_layer_backward,python -m pytest tests/test_special_ops.py -m mkldnn_rnn_layer_backward -vs,python -m pytest benchmark/test_special_perf.py -m mkldnn_rnn_layer_backward -vs
+mode,python -m pytest tests/test_reduction_ops.py -m mode -vs,python -m pytest benchmark/test_reduction_perf.py -m mode -vs
+moe_combine,python -m pytest tests/test_special_ops.py -m moe_combine -vs,python -m pytest benchmark/test_special_perf.py -m moe_combine -vs
+mse_loss_backward,python -m pytest tests/test_reduction_ops.py -m mse_loss_backward -vs,python -m pytest benchmark/test_reduction_perf.py -m mse_loss_backward -vs
+multi_margin_loss,python -m pytest tests/test_reduction_ops.py -m multi_margin_loss -vs,python -m pytest benchmark/test_reduction_perf.py -m multi_margin_loss -vs
+multilabel_margin_loss_forward,python -m pytest tests/test_special_ops.py -m multilabel_margin_loss_forward -vs,python -m pytest benchmark/test_special_perf.py -m multilabel_margin_loss_forward -vs
+multiply_,python -m pytest tests/test_binary_pointwise_ops.py -m multiply_ -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m multiply_ -vs
+mvlgamma_,python -m pytest tests/test_unary_pointwise_ops.py -m mvlgamma_ -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m mvlgamma_ -vs
+nan_to_num,python -m pytest tests/test_binary_pointwise_ops.py -m nan_to_num -vs,python -m pytest benchmark/test_generic_pointwise_perf.py -m nan_to_num -vs
+nan_to_num_,python -m pytest tests/test_unary_pointwise_ops.py -m nan_to_num -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m nan_to_num_ -vs
+nanmedian,python -m pytest tests/test_reduction_ops.py -m nanmedian -vs,python -m pytest benchmark/test_reduction_perf.py::test_nanmedian_perf -vs
+nansum,python -m pytest tests/test_general_reduction_ops.py -m nansum -vs,python -m pytest benchmark/test_reduction_perf.py -m nansum -vs
+narrow_copy,python -m pytest tests/test_special_ops.py -m narrow_copy -vs,python -m pytest benchmark/test_select_and_slice_perf.py -m narrow_copy -vs
+native_dropout_backward,python -m pytest tests/test_special_ops.py -m native_dropout_backward -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m native_dropout_backward -vs
+ne,python -m pytest tests/test_binary_pointwise_ops.py -m ne -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m ne -vs
+new_empty,python -m pytest tests/test_tensor_constructor_ops.py -m new_empty -vs,python -m pytest benchmark/test_tensor_constructor_perf.py -m new_empty -vs
+new_ones,python -m pytest tests/test_tensor_constructor_ops.py -m new_ones -vs,python -m pytest benchmark/test_tensor_constructor_perf.py -m new_ones -vs
+nextafter,python -m pytest tests/test_binary_pointwise_ops.py -m nextafter -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m nextafter -vs
+nextafter_,python -m pytest tests/test_binary_pointwise_ops.py -m nextafter_ -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m nextafter -vs
+nll_loss_nd,CUDA_VISIBLE_DEVICES=0 /usr/bin/python3 -m pytest tests/test_reduction_ops.py -m nll_loss_nd -vs --log-cli-level=DEBUG,CUDA_VISIBLE_DEVICES=0 /usr/bin/python3 -m pytest benchmark/test_reduction_perf.py -m nll_loss_nd -vs
+nonzero,python -m pytest tests/test_reduction_ops.py -m nonzero -vs,python -m pytest benchmark/test_reduction_perf.py -m nonzero -vs
+nonzero_numpy,python -m pytest tests/test_special_ops.py -m nonzero_numpy -vs,python -m pytest benchmark/test_special_perf.py -m nonzero_numpy -vs
+nonzero_static,python -m pytest tests/test_reduction_ops.py -m nonzero_static -vs,python -m pytest benchmark/test_reduction_perf.py -m nonzero_static -vs
+norm,python -m pytest tests/test_norm_ops.py -m norm -vs,python -m pytest benchmark/test_norm_perf.py -m norm -vs
+normal_,python -m pytest tests/test_distribution_ops.py -m normal_ -vs,python -m pytest benchmark/test_distribution_perf.py -m normal_ -vs
+not_equal,python -m pytest tests/test_binary_pointwise_ops.py -m not_equal -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m not_equal -vs
+one_hot,python -m pytest tests/test_tensor_constructor_ops.py -m one_hot -vs,python -m pytest benchmark/test_tensor_constructor_perf.py -m one_hot -vs
+ormqr,python -m pytest tests/test_blas_ops.py -m ormqr -vs,python -m pytest benchmark/test_special_perf.py -m ormqr -vs
+pad_sequence,python -m pytest tests/test_special_ops.py -m pad_sequence -vs,python -m pytest benchmark/test_special_perf.py -m pad_sequence -vs
+page_attention,python -m pytest tests/test_attention_ops.py -m page_attention -vs,python -m pytest benchmark/test_attention_perf.py -m page_attention -vs
+pairwise_distance,python -m pytest tests/test_special_ops.py -m pairwise_distance -vs,python -m pytest benchmark/test_special_perf.py -m pairwise_distance -vs
+pdist,python -m pytest tests/test_special_ops.py -m pdist -vs,python -m pytest benchmark/test_special_perf.py -m pdist -vs
+permute,python -m pytest tests/test_special_ops.py -m permute -vs,python -m pytest benchmark/test_special_perf.py -m permute -vs
+permute_copy,python -m pytest tests/test_special_ops.py -m permute_copy -vs,python -m pytest benchmark/test_special_perf.py -m permute_copy -vs
+pin_memory,python -m pytest tests/test_special_ops.py -m pin_memory -vs,python -m pytest benchmark/test_special_perf.py -m pin_memory -vs
+poisson,python -m pytest tests/test_special_ops.py -m poisson -vs,python -m pytest benchmark/test_special_perf.py -m poisson -vs
+polygamma,python -m pytest tests/test_unary_pointwise_ops.py -m polygamma -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m polygamma -vs
+positive,python -m pytest tests/test_unary_pointwise_ops.py -m positive -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m positive -vs
+prod,python -m pytest tests/test_general_reduction_ops.py -m prod -vs,python -m pytest benchmark/test_reduction_perf.py -m prod -vs
+quantize,python -m pytest tests/test_unary_pointwise_ops.py -m quantize -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m quantize -vs
+quantized_gru,python -m pytest tests/test_special_ops.py -m quantized_gru -vs,N/A - benchmark requires YAML configuration for 3D shapes
+quantized_lstm,python -m pytest tests/test_special_ops.py -m quantized_lstm -vs,python -m pytest benchmark/test_special_perf.py -m quantized_lstm -vs
+rad2deg,python -m pytest tests/test_unary_pointwise_ops.py -m rad2deg -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m rad2deg -vs
+randint,python -m pytest tests/test_special_ops.py -m randint -vs,python -m pytest benchmark/test_special_perf.py -m randint -vs
+randint_like,python -m pytest tests/test_tensor_constructor_ops.py -m randint_like -vs,python -m pytest benchmark/test_tensor_constructor_perf.py -m randint_like -vs
+randn,python -m pytest tests/test_tensor_constructor_ops.py -m randn -vs,python -m pytest benchmark/test_tensor_constructor_perf.py -m randn -vs
+randn_like,CUDA_VISIBLE_DEVICES=5 /usr/bin/python3 -m pytest tests/test_tensor_constructor_ops.py -m randn_like -vs,CUDA_VISIBLE_DEVICES=5 /usr/bin/python3 -m pytest benchmark/test_tensor_constructor_perf.py -m randn_like -vs
+real,python -m pytest tests/test_unary_pointwise_ops.py -m real -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m real -vs
+reflection_pad1d_backward,CUDA_VISIBLE_DEVICES=7 /usr/bin/python3 -m pytest tests/test_special_ops.py -m reflection_pad1d_backward -vs --log-cli-level=DEBUG,CUDA_VISIBLE_DEVICES=7 /usr/bin/python3 -m pytest benchmark/test_special_perf.py -m reflection_pad1d_backward -vs
+reflection_pad2d,CUDA_VISIBLE_DEVICES=1 python -m pytest tests/test_special_ops.py -m reflection_pad2d -vs --log-cli-level=DEBUG,CUDA_VISIBLE_DEVICES=1 python -m pytest benchmark/test_special_perf.py -m reflection_pad2d -vs
+reflection_pad3d,python -m pytest tests/test_special_ops.py -m reflection_pad3d -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m reflection_pad3d -vs
+reflection_pad3d_backward,python -m pytest tests/test_special_ops.py -m reflection_pad3d_backward -vs,python -m pytest benchmark/test_special_perf.py -m reflection_pad3d_backward -vs
+remainder,CUDA_VISIBLE_DEVICES=2 python -m pytest tests/test_binary_pointwise_ops.py -m remainder -vs --log-cli-level=DEBUG,CUDA_VISIBLE_DEVICES=2 python -m pytest benchmark/test_binary_pointwise_perf.py -m remainder -vs
+renorm,python -m pytest tests/test_norm_ops.py -m renorm -vs,python -m pytest benchmark/test_special_perf.py -m renorm -vs
+renorm_,python -m pytest tests/test_special_ops.py -m renorm_ -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m renorm_ -vs
+repeat,python -m pytest tests/test_unary_pointwise_ops.py -m repeat -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m repeat -vs
+replication_pad1d_backward,python -m pytest tests/test_special_ops.py -m replication_pad1d_backward -vs,python -m pytest benchmark/test_special_perf.py -m replication_pad1d_backward -vs
+replication_pad2d_backward,python -m pytest tests/test_special_ops.py -m replication_pad2d_backward -vs,python -m pytest benchmark/test_special_perf.py -m replication_pad2d_backward -vs
+replication_pad3d_backward,python -m pytest tests/test_special_ops.py -m replication_pad3d_backward -vs,python -m pytest benchmark/test_special_perf.py -m replication_pad3d_backward -vs
+reshape,python -m pytest tests/test_special_ops.py -m reshape -vs,python -m pytest benchmark/test_special_perf.py -m reshape -vs
+resize,python -m pytest tests/test_unary_pointwise_ops.py -m resize -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m resize -vs
+resize_,python -m pytest tests/test_special_ops.py -m resize_ -vs,python -m pytest benchmark/test_special_perf.py -m resize_ -vs
+resize_as,python -m pytest tests/test_special_ops.py -m resize_as -vs,python -m pytest benchmark/test_special_perf.py -m resize_as -vs
+resolve_neg,python -m pytest tests/test_special_ops.py -m resolve_neg -vs,python -m pytest benchmark/test_special_perf.py -m resolve_neg -vs
+result_type,python -m pytest tests/test_binary_pointwise_ops.py -m result_type -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m result_type -vs
+rnn_relu,python -m pytest tests/test_special_ops.py -m rnn_relu -vs,python -m pytest benchmark/test_special_perf.py -m rnn_relu -vs
+rnn_tanh,python -m pytest tests/test_special_ops.py -m rnn_tanh -vs,python -m pytest benchmark/test_special_perf.py -m rnn_tanh -vs
+roll,python -m pytest tests/test_unary_pointwise_ops.py -m roll -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m roll -vs
+rot90,python -m pytest tests/test_special_ops.py -m rot90 -vs,python -m pytest benchmark/test_special_perf.py -m rot90 -vs
+round_,python -m pytest tests/test_unary_pointwise_ops.py -m round -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m 'round or round_' -vs
+rrelu_with_noise,python -m pytest tests/test_unary_pointwise_ops.py -m rrelu_with_noise -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m rrelu_with_noise -vs
+rrelu_with_noise_,python -m pytest tests/test_unary_pointwise_ops.py -m rrelu_with_noise_ -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m rrelu_with_noise_ -vs
+rrelu_with_noise_functional,python -m pytest tests/test_special_ops.py -m rrelu_with_noise_functional -vs,python -m pytest benchmark/test_special_perf.py -m rrelu_with_noise_functional -vs
+rsqrt,python -m pytest tests/test_unary_pointwise_ops.py -m rsqrt -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m rsqrt -vs
+scaled_dot_product_attention,python -m pytest tests/test_attention_ops.py -m scaled_dot_product_attention -vs,python -m pytest benchmark/test_attention_perf.py -m scaled_dot_product_attention -vs
+scatter_add,python -m pytest tests/test_reduction_ops.py -m scatter_add -vs,python -m pytest benchmark/test_select_and_slice_perf.py -m scatter_add -vs
+scatter_reduce,python -m pytest tests/test_reduction_ops.py -m scatter_reduce -vs && python -m pytest tests/test_reduction_ops.py -m scatter_reduce_ -vs,python -m pytest benchmark/test_select_and_slice_perf.py -m scatter_reduce -vs && python -m pytest benchmark/test_select_and_slice_perf.py -m scatter_reduce_ -vs
+searchsorted,python -m pytest tests/test_special_ops.py -m searchsorted -vs,python -m pytest benchmark/test_special_perf.py -m searchsorted -vs
+segment_reduce,python -m pytest tests/test_special_ops.py -m segment_reduce -vs,python -m pytest benchmark/test_special_perf.py -m segment_reduce -vs
+select,python -m pytest tests/test_special_ops.py -m select -vs,python -m pytest benchmark/test_special_perf.py -m select -vs
+select_backward,python -m pytest tests/test_special_ops.py -m select_backward -vs,python -m pytest benchmark/test_special_perf.py -m select_backward -vs
+select_scatter,python -m pytest tests/test_reduction_ops.py -m select_scatter -vs,python -m pytest benchmark/test_select_and_slice_perf.py -m select_scatter -vs
+sign_,python -m pytest tests/test_unary_pointwise_ops.py -m sign_ -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m sign_ -vs
+sin,python -m pytest tests/test_unary_pointwise_ops.py -m 'sin or sin_' -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m sin -vs
+sinc,python -m pytest tests/test_unary_pointwise_ops.py -m sinc -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m sinc -vs
+sinh,python -m pytest tests/test_unary_pointwise_ops.py -m sinh -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m sinh -vs
+size,CUDA_VISIBLE_DEVICES=3 /usr/bin/python3 -m pytest tests/test_special_ops.py -m size -vs,CUDA_VISIBLE_DEVICES=3 /usr/bin/python3 -m pytest benchmark/test_special_perf.py -m size -vs
+slice,python -m pytest tests/test_reduction_ops.py -k 'test_accuracy_slice and not backward and not scatter' -v,python -m pytest benchmark/test_select_and_slice_perf.py::test_slice_perf -vs
+slice_backward,python -m pytest tests/test_reduction_ops.py -m slice_backward -vs,python -m pytest benchmark/test_select_and_slice_perf.py -m slice_backward -vs
+smooth_l1_loss_backward,python -m pytest tests/test_special_ops.py -m smooth_l1_loss_backward -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m smooth_l1_loss_backward -vs
+soft_margin_loss_backward,python -m pytest tests/test_special_ops.py -m soft_margin_loss_backward -vs,python -m pytest benchmark/test_special_perf.py -m soft_margin_loss_backward -vs
+sparse_sampled_addmm,python -m pytest tests/test_special_ops.py -m sparse_sampled_addmm -vs,python -m pytest benchmark/test_special_perf.py -m sparse_sampled_addmm -vs
+special_airy_ai,python -m pytest tests/test_unary_pointwise_ops.py -m special_airy_ai -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_airy_ai -vs
+special_bessel_j0,python -m pytest tests/test_unary_pointwise_ops.py -m special_bessel_j0 -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_bessel_j0 -vs
+special_bessel_j1,python -m pytest tests/test_unary_pointwise_ops.py -m special_bessel_j1 -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_bessel_j1 -vs
+special_bessel_y0,python -m pytest tests/test_unary_pointwise_ops.py -m special_bessel_y0 -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_bessel_y0 -vs
+special_bessel_y1,python -m pytest tests/test_special_ops.py -m special_bessel_y1 -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_bessel_y1 -vs
+special_chebyshev_polynomial_t,python -m pytest tests/test_binary_pointwise_ops.py -m special_chebyshev_polynomial_t -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m special_chebyshev_polynomial_t -vs
+special_chebyshev_polynomial_u,python -m pytest tests/test_binary_pointwise_ops.py -m 'special_chebyshev_polynomial_u or special_chebyshev_polynomial_u_' -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m special_chebyshev_polynomial_u -vs
+special_chebyshev_polynomial_v,python -m pytest tests/test_binary_pointwise_ops.py -m special_chebyshev_polynomial_v -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m special_chebyshev_polynomial_v -vs
+special_chebyshev_polynomial_w,python -m pytest tests/test_binary_pointwise_ops.py -m special_chebyshev_polynomial_w -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m special_chebyshev_polynomial_w -vs
+special_digamma,python -m pytest tests/test_unary_pointwise_ops.py -m special_digamma -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_digamma -vs
+special_entr,python -m pytest tests/test_unary_pointwise_ops.py -m special_entr -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_entr -vs
+special_erf,python -m pytest tests/test_unary_pointwise_ops.py -m special_erf -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_erf -vs
+erfc,python -m pytest tests/test_unary_pointwise_ops.py -m erfc -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m erfc -vs
+special_erfcx,python -m pytest tests/test_unary_pointwise_ops.py -m special_erfcx -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_erfcx -vs
+special_erfinv,python -m pytest tests/test_unary_pointwise_ops.py -m special_erfinv -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_erfinv -vs
+special_exp2,python -m pytest tests/test_unary_pointwise_ops.py -m special_exp2 -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_exp2 -vs
+special_expit,python -m pytest tests/test_unary_pointwise_ops.py -m special_expit -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_expit -vs
+special_expm1,python -m pytest tests/test_unary_pointwise_ops.py -m expm1 -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_expm1 -vs
+special_gammainc,python -m pytest tests/test_binary_pointwise_ops.py -m special_gammainc -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m special_gammainc -vs
+special_gammaincc,python -m pytest tests/test_binary_pointwise_ops.py -m special_gammaincc -vs --cache-clear,python -m pytest benchmark/test_binary_pointwise_perf.py -m special_gammaincc -vs
+special_gammaln,python -m pytest tests/test_unary_pointwise_ops.py -m special_gammaln -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_gammaln -vs
+special_hermite_polynomial_h,python -m pytest tests/test_special_ops.py -m special_hermite_polynomial_h -vs,python -m pytest benchmark/test_special_perf.py -m special_hermite_polynomial_h -vs
+special_hermite_polynomial_he,python -m pytest tests/test_binary_pointwise_ops.py -m special_hermite_polynomial_he -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m special_hermite_polynomial_he -vs
+special_i0,python -m pytest tests/test_unary_pointwise_ops.py -m special_i0 -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_i0 -vs
+special_laguerre_polynomial_l,python -m pytest tests/test_binary_pointwise_ops.py -m special_laguerre_polynomial_l -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m special_laguerre_polynomial_l -vs
+special_legendre_polynomial_p,python -m pytest tests/test_special_ops.py -m special_legendre_polynomial_p -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m special_legendre_polynomial_p -vs
+special_log1p,python -m pytest tests/test_unary_pointwise_ops.py -m special_log1p -vs && python -m pytest tests/test_unary_pointwise_ops.py -m log1p -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_log1p -vs && python -m pytest benchmark/test_unary_pointwise_perf.py -m log1p -vs
+special_log_ndtr,python -m pytest tests/test_unary_pointwise_ops.py -m special_log_ndtr -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_log_ndtr -vs
+special_log_softmax,python -m pytest tests/test_special_ops.py -m special_log_softmax -vs,python -m pytest benchmark/test_reduction_perf.py -m special_log_softmax -vs
+special_logit,CUDA_VISIBLE_DEVICES=3 python -m pytest tests/test_unary_pointwise_ops.py -m special_logit -vs,CUDA_VISIBLE_DEVICES=3 python -m pytest benchmark/test_unary_pointwise_perf.py -m special_logit -vs
+special_logsumexp,python -m pytest tests/test_reduction_ops.py -m special_logsumexp -vs,python -m pytest benchmark/test_reduction_perf.py -m special_logsumexp -vs
+special_modified_bessel_i0,python -m pytest tests/test_special_ops.py -m special_modified_bessel_i0 -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_modified_bessel_i0 -vs
+special_modified_bessel_i1,python -m pytest tests/test_unary_pointwise_ops.py -m special_modified_bessel_i1 -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_modified_bessel_i1 -vs
+special_modified_bessel_k0,python -m pytest tests/test_unary_pointwise_ops.py -m special_modified_bessel_k0 -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_modified_bessel_k0 -vs
+special_modified_bessel_k1,python -m pytest tests/test_unary_pointwise_ops.py -m special_modified_bessel_k1 -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_modified_bessel_k1 -vs
+special_multigammaln,python -m pytest tests/test_unary_pointwise_ops.py -m special_multigammaln -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_multigammaln -vs
+special_ndtr,python -m pytest tests/test_unary_pointwise_ops.py -m special_ndtr -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_ndtr -vs
+special_ndtri,python -m pytest tests/test_unary_pointwise_ops.py -m special_ndtri -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_ndtri -vs
+special_polygamma,python -m pytest tests/test_special_ops.py -m special_polygamma -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_polygamma -vs
+special_psi,python -m pytest tests/test_unary_pointwise_ops.py -m special_psi -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_psi -vs
+special_round,python -m pytest tests/test_unary_pointwise_ops.py -m special_round -vs && python -m pytest tests/test_unary_pointwise_ops.py -m special_round_out -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_round -vs
+special_scaled_modified_bessel_k0,python -m pytest tests/test_unary_pointwise_ops.py -m special_scaled_modified_bessel_k0 -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_scaled_modified_bessel_k0 -vs
+special_scaled_modified_bessel_k1,PYTHONPATH=src CUDA_VISIBLE_DEVICES=0 python -m pytest tests/test_unary_pointwise_ops.py -m special_scaled_modified_bessel_k1 -vs,PYTHONPATH=src CUDA_VISIBLE_DEVICES=0 python -m pytest benchmark/test_unary_pointwise_perf.py -m special_scaled_modified_bessel_k1 -vs
+special_shifted_chebyshev_polynomial_t,python -m pytest tests/test_special_ops.py -m special_shifted_chebyshev_polynomial_t -vs,python -m pytest benchmark/test_special_perf.py -m special_shifted_chebyshev_polynomial_t -vs
+special_shifted_chebyshev_polynomial_u,python -m pytest tests/test_binary_pointwise_ops.py -m special_shifted_chebyshev_polynomial_u -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m special_shifted_chebyshev_polynomial_u -vs
+special_shifted_chebyshev_polynomial_v,python -m pytest tests/test_binary_pointwise_ops.py -m shifted_chebyshev_polynomial_v -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m shifted_chebyshev_polynomial_v -vs
+special_shifted_chebyshev_polynomial_w,python -m pytest tests/test_binary_pointwise_ops.py -m special_shifted_chebyshev_polynomial_w -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m special_shifted_chebyshev_polynomial_w -vs
+special_sinc,python -m pytest tests/test_unary_pointwise_ops.py -m sinc -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m sinc -vs
+special_softmax,python -m pytest tests/test_special_ops.py -m special_softmax -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m special_softmax -vs
+special_spherical_bessel_j0,python -m pytest tests/test_unary_pointwise_ops.py -m special_spherical_bessel_j0 -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m special_spherical_bessel_j0 -vs
+special_xlog1py,python -m pytest tests/test_binary_pointwise_ops.py -m special_xlog1py -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m special_xlog1py -vs
+special_xlogy,python -m pytest tests/test_binary_pointwise_ops.py -m xlogy -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m 'xlogy or xlogy_' -vs
+special_zeta,python -m pytest tests/test_binary_pointwise_ops.py -m special_zeta -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m special_zeta -vs
+split_with_sizes_copy,python -m pytest tests/test_special_ops.py -m split_with_sizes_copy -vs,python -m pytest benchmark/test_special_perf.py -m split_with_sizes_copy -vs
+square_,python -m pytest tests/test_unary_pointwise_ops.py -m square_ -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m square_ -vs
+squeeze,python -m pytest tests/test_special_ops.py -m 'squeeze or squeeze_' -vs,python -m pytest benchmark/test_special_perf.py -m squeeze -vs
+squeeze_copy,python -m pytest tests/test_unary_pointwise_ops.py -m squeeze_copy -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_unary_pointwise_perf.py -m squeeze_copy -vs
+stack,CUDA_VISIBLE_DEVICES=2 /usr/bin/python3 -m pytest tests/test_special_ops.py -m stack -vs,CUDA_VISIBLE_DEVICES=2 /usr/bin/python3 -m pytest benchmark/test_tensor_concat_perf.py -m stack -vs
+std_mean,python -m pytest tests/test_reduction_ops.py -m std_mean -vs,python -m pytest benchmark/test_reduction_perf.py -m std_mean -vs
+stft,python -m pytest tests/test_special_ops.py -m stft -vs,Quick benchmark run
+subtract,python -m pytest tests/test_binary_pointwise_ops.py -m subtract -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m subtract -vs
+subtract_,python -m pytest tests/test_binary_pointwise_ops.py -m subtract_ -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m subtract_ -vs
+sum,CUDA_VISIBLE_DEVICES=7 python -m pytest tests/test_reduction_ops.py -m sum -vs,CUDA_VISIBLE_DEVICES=7 python -m pytest benchmark/test_reduction_perf.py -m sum -vs
+svd,python -m pytest tests/test_special_ops.py -m svd -vs,python -m pytest benchmark/test_special_perf.py -m svd -vs
+sym_constrain_range,python -m pytest tests/test_special_ops.py -m 'sym_constrain_range or sym_constrain_range_for_size' -vs,python -m pytest benchmark/test_special_perf.py -m sym_constrain_range -vs
+sym_constrain_range_for_size,CUDA_VISIBLE_DEVICES=0 /usr/bin/python3 -m pytest tests/test_special_ops.py -m sym_constrain_range_for_size -vs,CUDA_VISIBLE_DEVICES=0 /usr/bin/python3 -m pytest benchmark/test_special_perf.py -m sym_constrain_range_for_size -vs
+sym_numel,python -m pytest tests/test_special_ops.py -m sym_numel -vs,python -m pytest benchmark/test_special_perf.py -m sym_numel -vs
+sym_size,python -m pytest tests/test_special_ops.py -m sym_size -vs,python -m pytest benchmark/test_special_perf.py -m sym_size -vs
+sym_storage_offset,python -m pytest tests/test_special_ops.py -m sym_storage_offset -vs,python -m pytest benchmark/test_special_perf.py -m sym_storage_offset -vs
+sym_stride,python -m pytest tests/test_special_ops.py -m sym_stride -vs,python -m pytest benchmark/test_special_perf.py -m sym_stride -vs
+t,python -m pytest tests/test_special_ops.py -m 't or t_' -vs,python -m pytest benchmark/test_special_perf.py -m t -vs
+t_,python -m pytest tests/test_special_ops.py -m t_ -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m t_ -vs
+tan_,python -m pytest tests/test_unary_pointwise_ops.py -m tan_ -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m tan_ -vs
+tensor_split,python -m pytest tests/test_special_ops.py -m tensor_split -vs,python -m pytest benchmark/test_special_perf.py -m tensor_split -vs
+threshold_,python -m pytest tests/test_unary_pointwise_ops.py -m threshold_ -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_unary_pointwise_perf.py -m threshold_ -vs
+tile,CUDA_VISIBLE_DEVICES=1 /usr/bin/python3 -m pytest tests/test_unary_pointwise_ops.py -m tile -vs,CUDA_VISIBLE_DEVICES=1 /usr/bin/python3 -m pytest benchmark/test_tensor_concat_perf.py -m tile -vs
+to,python -m pytest tests/test_unary_pointwise_ops.py -m to_copy -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m to_copy -vs
+transpose,python -m pytest tests/test_special_ops.py -m transpose -vs,python -m pytest benchmark/test_special_perf.py -m transpose -vs
+transpose_,python -m pytest tests/test_special_ops.py -m transpose_ -vs,python -m pytest benchmark/test_special_perf.py -m transpose_ -vs
+transpose_copy,python -m pytest tests/test_special_ops.py -m transpose_copy -vs,python -m pytest benchmark/test_generic_pointwise_perf.py -m transpose_copy -vs
+triangular_solve,python -m pytest tests/test_blas_ops.py -m triangular_solve -vs,python -c manual benchmark
+tril_,python -m pytest tests/test_unary_pointwise_ops.py -m tril_ -vs,python -m pytest benchmark/test_generic_pointwise_perf.py -m tril_ -vs
+tril_indices,python -m pytest tests/test_special_ops.py -m tril_indices -vs,python -m pytest benchmark/test_special_perf.py -m tril_indices -vs
+triu_,python -m pytest tests/test_unary_pointwise_ops.py -m triu_ -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_generic_pointwise_perf.py -m triu_ -vs
+triu_indices,python -m pytest tests/test_special_ops.py -m triu_indices -vs,python -m pytest benchmark/test_special_perf.py -m triu_indices -vs
+true_divide,python -m pytest tests/test_binary_pointwise_ops.py -m true_divide -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m true_divide -vs
+true_divide_,python -m pytest tests/test_binary_pointwise_ops.py -m true_divide_ -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m true_divide -vs
+trunc_,python -m pytest tests/test_unary_pointwise_ops.py -m trunc -vs && python -m pytest tests/test_unary_pointwise_ops.py -m trunc_ -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m trunc -vs && python -m pytest benchmark/test_unary_pointwise_perf.py -m trunc_ -vs
+unbind_copy,python -m pytest tests/test_special_ops.py -m unbind_copy -vs,python -m pytest benchmark/test_special_perf.py -m unbind_copy -vs
+unfold_backward,python -m pytest tests/test_special_ops.py -m unfold -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_special_perf.py -m unfold -vs
+unfold_copy,python -m pytest tests/test_special_ops.py -m unfold_copy -vs,python -m pytest benchmark/test_special_perf.py -m unfold_copy -vs
+uniform,python -m pytest tests/test_distribution_ops.py -m uniform_ -vs,python -m pytest benchmark/test_distribution_perf.py -m uniform_ -vs
+uniform_,python -m pytest tests/test_distribution_ops.py -m uniform_ -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_distribution_perf.py -m uniform_ -vs
+unique_consecutive,python -m pytest tests/test_special_ops.py -m unique_consecutive -vs,python -m pytest benchmark/test_special_perf.py -m unique_consecutive -vs
+unique_dim,python -m pytest tests/test_special_ops.py -m unique_dim -vs,python -m pytest benchmark/test_special_perf.py -m unique_dim -vs
+unsafe_chunk,python -m pytest tests/test_special_ops.py -m unsafe_chunk -vs,python -m pytest benchmark/test_special_perf.py -m unsafe_chunk -vs
+unsafe_split,python -m pytest tests/test_special_ops.py -m unsafe_split -vs,python -m pytest benchmark/test_special_perf.py -m unsafe_split -vs
+unsafe_split_with_sizes,python -m pytest tests/test_special_ops.py -m unsafe_split_with_sizes -vs,python -m pytest benchmark/test_tensor_concat_perf.py -m unsafe_split_with_sizes -vs
+unsqueeze,python -m pytest tests/test_special_ops.py -m unsqueeze -vs,python -m pytest benchmark/test_special_perf.py -m unsqueeze -vs
+unsqueeze_,python -m pytest tests/test_special_ops.py -m unsqueeze_ -vs,python -m pytest benchmark/test_special_perf.py -m unsqueeze -vs
+unsqueeze_copy,python -m pytest tests/test_special_ops.py -m unsqueeze_copy -vs,python -m pytest benchmark/test_special_perf.py -m unsqueeze_copy -vs
+upsample_bicubic2d,python -m pytest tests/test_special_ops.py -m upsample_bicubic2d -vs,python -m pytest benchmark/test_special_perf.py -m upsample_bicubic2d -vs
+upsample_bicubic2d_backward,python -m pytest tests/test_special_ops.py -m upsample_bicubic2d_backward -vs,python -m pytest benchmark/test_special_perf.py -m upsample_bicubic2d_backward -vs
+upsample_bilinear2d_backward,CUDA_VISIBLE_DEVICES=0 /usr/bin/python3 -m pytest tests/test_special_ops.py -m upsample_bilinear2d_backward -vs,CUDA_VISIBLE_DEVICES=0 /usr/bin/python3 -m pytest benchmark/test_special_perf.py -m upsample_bilinear2d_backward -vs
+upsample_linear1d,python -m pytest tests/test_special_ops.py -m upsample_linear1d -vs,python -m pytest benchmark/test_special_perf.py -m upsample_linear1d -vs
+upsample_nearest2d_backward,python -m pytest tests/test_special_ops.py -m upsample_nearest2d_backward -vs,python -m pytest benchmark/test_special_perf.py -m upsample_nearest2d_backward -vs
+upsample_trilinear3d,python -m pytest tests/test_special_ops.py -m upsample_trilinear3d -vs,python -m pytest benchmark/test_special_perf.py -m upsample_trilinear3d -vs
+var,python -m pytest tests/test_reduction_ops.py -m var -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_reduction_perf.py -m var -vs
+view,python -m pytest tests/test_special_ops.py -m view -vs,python -m pytest benchmark/test_special_perf.py -m view -vs
+view_as,python -m pytest tests/test_special_ops.py -m view_as -vs,python -m pytest benchmark/test_special_perf.py -m view_as -vs
+view_as_real,python -m pytest tests/test_unary_pointwise_ops.py -m view_as_real -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m view_as_real -vs
+view_copy,python -m pytest tests/test_unary_pointwise_ops.py -m view_copy -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m view_copy -vs
+vstack,python -m pytest tests/test_special_ops.py -m vstack -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_tensor_concat_perf.py -m vstack -vs
+where,python -m pytest tests/test_binary_pointwise_ops.py -m where -vs,python -m pytest benchmark/test_generic_pointwise_perf.py -m where -vs
+zero_,python -m pytest tests/test_unary_pointwise_ops.py -m zero_ -vs,python -m pytest benchmark/test_unary_pointwise_perf.py -m zero_ -vs
+special_erfc,python -m pytest tests/test_unary_pointwise_ops.py -m erfc -vs --log-cli-level=DEBUG,python -m pytest benchmark/test_unary_pointwise_perf.py -m erfc -vs
+__ixor__,python -m pytest tests/test_binary_pointwise_ops.py -m xor -vs,python -m pytest benchmark/test_binary_pointwise_perf.py -m xor -vs
+_nested_view_from_buffer_copy,python -m pytest tests/test_special_ops.py -m nested_view_from_buffer_copy -vs,python -m pytest benchmark/test_special_perf.py -m nested_view_from_buffer_copy -vs
+ConvTranspose,python -m pytest tests/test_convolution_ops.py -m conv_transpose2d -vs,python -m pytest benchmark/test_convolution_perf.py -m conv_transpose2d -vs
+Shape,python -m pytest tests/test_special_ops.py -m shape -vs,python -m pytest benchmark/test_special_perf.py -m shape -vs

@@ -1,0 +1,97 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+*.whl
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+envs/
+conda-env/
+.conda/
+miniconda3/
+conda-meta/
+
+# Pytest
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and databases
+*.log
+logs/
+*.sqlite3
+*.db
+
+# C/C++ / CMake build files
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+Makefile
+cmake-build*/
+build-*/
+
+# Compiled objects and libraries
+*.o
+*.so
+*.a
+*.dylib
+*.dll
+*.exe
+*.out
+
+# Python artifacts
+*.pyc
+*.pyo
+*.pyd
+*.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+
+# Temporary and backup files
+*~
+*.swp
+*.tmp
+*.temp
+*.cache
+
+# Local config
+local_settings.py
+.envrc
+
+# Results, reports and generated outputs
+results/
+test_results*/
+task_progress.txt
+
+# Ignore folder explicitly marked as off-limits
+第一批及格算子国产GPU测试.xlsx
+天数Iluvatar算子测试排坑指南.md
+天数芯片算子测试结果分析说明.md
+
