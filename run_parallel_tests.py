@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-沐曦 MetaX C550 并行测试脚本
+昆仑芯 P800 并行测试脚本
 读取 第一批及格算子国产GPU测试.xlsx 中的算子名单，
 匹配 all_operator_commands.csv 中的测试命令，
-利用 8 块 GPU 并行执行精度测试和 Benchmark，
+利用多块昆仑芯并行执行精度测试和 Benchmark，
 结果输出到 test_results_YYYYMMDD/ 目录。
 """
 
@@ -15,25 +15,212 @@ import os
 import re
 import time
 import threading
+import signal
+import shlex
 from datetime import datetime, timezone
 from pathlib import Path
 from collections import OrderedDict
 
-# ======================== 配置 ========================
-WORK_DIR = Path("/root/JudeWorkplace")
-FLAGGEMS_BASE = WORK_DIR / "FlagGems_minimax_2_7"
-WORKTREES_DIR = FLAGGEMS_BASE / ".worktrees"
-EXCEL_PATH = WORK_DIR / "第一批及格算子国产GPU测试.xlsx"
-CSV_PATH = WORK_DIR / "all_operator_commands.csv"
+try:
+    from tqdm import tqdm
+except ImportError:
+    tqdm = None
 
-NUM_GPUS = 8
-CMD_TIMEOUT = 7200  # 2小时超时
+_PROGRESS_BAR = None
+_PROGRESS_LOCK = threading.RLock()
+
+# ======================== 配置 ========================
+SCRIPT_DIR = Path(__file__).resolve().parent
+EXCEL_FILENAME = "第一批及格算子国产GPU测试.xlsx"
+CSV_FILENAME = "all_operator_commands.csv"
+
+
+def first_existing_path(*paths):
+    """返回第一个存在的路径；都不存在时返回第一个候选。"""
+    for path in paths:
+        if path.exists():
+            return path
+    return paths[0]
+
+
+def env_path(name, default):
+    value = os.environ.get(name)
+    return Path(value).expanduser() if value else default
+
+
+def env_int(name, default):
+    value = os.environ.get(name)
+    if not value:
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        return default
+
+
+def env_int_tuple(name):
+    value = os.environ.get(name, "").strip()
+    if not value:
+        return tuple()
+
+    parsed = []
+    for item in re.split(r"[,\s]+", value):
+        if not item:
+            continue
+        try:
+            number = int(item)
+        except ValueError:
+            continue
+        if number >= 0 and number not in parsed:
+            parsed.append(number)
+    return tuple(parsed)
+
+
+def env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in ("1", "true", "yes", "on")
+
+
+DEFAULT_WORK_DIR = first_existing_path(
+    Path("/root/JudeWorkplace"),
+    Path("/data/dxd/FlagGems_minimax_2_7_backup_20260507"),
+    Path("/home/FlagGems_minimax_2_7_backup_20260507"),
+)
+
+WORK_DIR = env_path("KUNLUN_WORK_DIR", DEFAULT_WORK_DIR)
+FLAGGEMS_BASE = env_path("KUNLUN_FLAGGEMS_BASE", WORK_DIR / "FlagGems_minimax_2_7")
+WORKTREES_DIR = env_path("KUNLUN_WORKTREES_DIR", FLAGGEMS_BASE / ".worktrees")
+EXCEL_PATH = env_path(
+    "KUNLUN_EXCEL_PATH",
+    first_existing_path(WORK_DIR / EXCEL_FILENAME, SCRIPT_DIR / EXCEL_FILENAME),
+)
+CSV_PATH = env_path(
+    "KUNLUN_CSV_PATH",
+    first_existing_path(WORK_DIR / CSV_FILENAME, SCRIPT_DIR / CSV_FILENAME),
+)
+
+NUM_GPUS = env_int("KUNLUN_NUM_GPUS", 8)
+CMD_TIMEOUT = env_int("KUNLUN_CMD_TIMEOUT", 7200)  # 2小时超时
+ACCURACY_TIMEOUT = env_int("KUNLUN_ACCURACY_TIMEOUT", CMD_TIMEOUT)
+BENCHMARK_TIMEOUT = env_int("KUNLUN_BENCHMARK_TIMEOUT", CMD_TIMEOUT)
+KILL_GRACE_SECONDS = env_int("KUNLUN_KILL_GRACE_SECONDS", 10)
+
+# 昆仑芯管理命令。用户环境中为 xpu_smi；如果机器使用 xpu-smi，可通过环境变量覆盖。
+XPU_SMI_CMD = os.environ.get("KUNLUN_XPU_SMI", "xpu_smi")
+
+# 容器里的测试环境在 python310_torch25_cuda；如需其他 Python，可通过环境变量覆盖。
+DEFAULT_PYTHON_BIN = first_existing_path(
+    Path("/root/miniconda/envs/python310_torch25_cuda/bin/python"),
+    Path("/usr/bin/python3"),
+)
+PYTHON_BIN = os.environ.get("KUNLUN_PYTHON", str(DEFAULT_PYTHON_BIN))
+
+# FlagGems 的 _kunlunxin 后端当前声明 device_name="cuda"，因此默认仍使用 CUDA_VISIBLE_DEVICES。
+DEVICE_VISIBLE_ENV = os.environ.get("KUNLUN_VISIBLE_DEVICES_ENV", "CUDA_VISIBLE_DEVICES")
+VISIBLE_DEVICE_ENV_NAMES = tuple(
+    OrderedDict.fromkeys(
+        [
+            "CUDA_VISIBLE_DEVICES",
+            "XPU_VISIBLE_DEVICES",
+            "KUNLUN_VISIBLE_DEVICES",
+            DEVICE_VISIBLE_ENV,
+        ]
+    )
+)
+
+# 默认不重置设备；如真实环境需要，可设置 KUNLUN_RESET_XPU_BEFORE_RUN=1。
+RESET_XPU_BEFORE_RUN = env_bool("KUNLUN_RESET_XPU_BEFORE_RUN", False)
+
+# 设备筛选：默认空值表示使用自动发现的全部 XPU。
+DEVICE_IDS = env_int_tuple("KUNLUN_DEVICE_IDS")
+EXCLUDE_DEVICE_IDS = env_int_tuple("KUNLUN_EXCLUDE_DEVICE_IDS")
+
+# 调试开关：默认保持全量、精度+benchmark 都运行。
+ONLY_OPS = tuple(
+    op.strip()
+    for op in os.environ.get("KUNLUN_ONLY_OPS", "").split(",")
+    if op.strip()
+)
+MAX_OPS = env_int("KUNLUN_MAX_OPS", 0)
+START_INDEX = env_int("KUNLUN_START_INDEX", 0)
+BATCH_SIZE = env_int("KUNLUN_BATCH_SIZE", 0)
+RUN_ACCURACY = env_bool("KUNLUN_RUN_ACCURACY", True)
+RUN_BENCHMARK = env_bool("KUNLUN_RUN_BENCHMARK", True)
+CONTINUE_CHAINS_ON_FAILURE = env_bool("KUNLUN_CONTINUE_CHAINS_ON_FAILURE", False)
+SKIP_OPS = tuple(
+    op.strip()
+    for op in os.environ.get("KUNLUN_SKIP_OPS", "").split(",")
+    if op.strip()
+)
+
+OUTPUT_DIR_ENV = (
+    os.environ.get("OUTPUT_DIR", "").strip()
+    or os.environ.get("KUNLUN_OUTPUT_DIR", "").strip()
+)
+RESUME = env_bool("RESUME", False)
+CHECKPOINT_DIR_NAME = "checkpoints"
 
 # ======================== 辅助函数 ========================
 
 def log(msg):
     ts = datetime.now().strftime("%H:%M:%S")
-    print(f"[{ts}] {msg}", flush=True)
+    line = f"[{ts}] {msg}"
+    with _PROGRESS_LOCK:
+        if _PROGRESS_BAR is not None:
+            try:
+                _PROGRESS_BAR.write(line)
+            except Exception:
+                print(line, flush=True)
+        else:
+            print(line, flush=True)
+
+
+class OperatorProgress:
+    """在交互终端中显示算子级进度；非 TTY 或未安装 tqdm 时自动降级。"""
+
+    def __init__(self, total, initial=0):
+        self.total = total
+        self.initial = initial
+        self.bar = None
+
+    def __enter__(self):
+        global _PROGRESS_BAR
+        if tqdm is None or not sys.stdout.isatty() or self.total <= 0:
+            return self
+
+        with _PROGRESS_LOCK:
+            self.bar = tqdm(
+                total=self.total,
+                initial=self.initial,
+                desc="算子进度",
+                unit="op",
+                dynamic_ncols=True,
+                file=sys.stdout,
+            )
+            _PROGRESS_BAR = self.bar
+        return self
+
+    def update(self, n=1):
+        if self.bar is None:
+            return
+        with _PROGRESS_LOCK:
+            try:
+                self.bar.update(n)
+            except Exception:
+                pass
+
+    def __exit__(self, exc_type, exc, tb):
+        global _PROGRESS_BAR
+        if self.bar is None:
+            return
+        with _PROGRESS_LOCK:
+            _PROGRESS_BAR = None
+            try:
+                self.bar.close()
+            except Exception:
+                pass
 
 
 def parse_excel_operators(excel_path):
@@ -96,13 +283,30 @@ def get_safe_filename(op_name):
 
 
 def strip_gpu_prefix(cmd):
-    """去掉命令中已有的 CUDA_VISIBLE_DEVICES= / PYTHONPATH= 等前缀"""
+    """去掉命令中已有的设备可见性 / PYTHONPATH 等前缀"""
     if not cmd:
         return cmd
-    cleaned = re.sub(r'^CUDA_VISIBLE_DEVICES=\d+\s+', '', cmd)
-    cleaned = re.sub(r'^PYTHONPATH=[^\s]+\s+', '', cleaned)
-    cleaned = re.sub(r'^/usr/bin/python3?\s+', 'python ', cleaned)
-    cleaned = re.sub(r'^/opt/conda/bin/python3?\s+', 'python ', cleaned)
+    cleaned = cmd.strip()
+    while True:
+        original = cleaned
+        for env_name in VISIBLE_DEVICE_ENV_NAMES:
+            cleaned = re.sub(
+                rf'(^|(?:&&|\|\||;)\s*){re.escape(env_name)}=[^\s]+\s+',
+                lambda m: m.group(1),
+                cleaned,
+            )
+        cleaned = re.sub(
+            r'(^|(?:&&|\|\||;)\s*)PYTHONPATH=[^\s]+\s+',
+            lambda m: m.group(1),
+            cleaned,
+        )
+        cleaned = re.sub(
+            r'(^|(?:&&|\|\||;)\s*)(/usr/bin/python3?|/opt/conda/bin/python3?|python3?)(?=\s|$)',
+            lambda m: f'{m.group(1)}{PYTHON_BIN}',
+            cleaned,
+        )
+        if cleaned == original:
+            break
     return cleaned.strip()
 
 
@@ -129,38 +333,119 @@ def find_worktree_dir(op_name):
     return None
 
 
-def get_gpu_memory_usage():
-    """通过 mx-smi 获取每块 GPU 的显存使用率"""
-    try:
-        result = subprocess.run(
-            ["mx-smi", "--show-memory"],
-            capture_output=True, text=True, timeout=30
-        )
-        output = result.stdout
-    except Exception as e:
-        log(f"mx-smi 调用失败: {e}")
-        return None
+def parse_memory_mb(value):
+    """解析 xpu_smi 输出中的 MB/MiB 数字。"""
+    m = re.search(r"([\d.]+)", value)
+    return float(m.group(1)) if m else None
 
+
+def parse_xpu_smi_machine_readable(output):
+    """解析 xpu_smi -q -m 输出，返回 {xpu_id: memory_usage_percent}。"""
     gpu_usages = {}
-    current_gpu = None
-    for line in output.split("\n"):
-        m = re.match(r"GPU#(\d+)\s+", line)
-        if m:
-            current_gpu = int(m.group(1))
-        if current_gpu is not None and "vis_vram usage" in line:
-            usage_m = re.search(r"([\d.]+)\s*%", line)
-            if usage_m:
-                gpu_usages[current_gpu] = float(usage_m.group(1))
-                current_gpu = None
+    for line in output.splitlines():
+        line = line.strip()
+        if not line or line.startswith(("KUNLUNXIN", "XPUSMI", "xpu-smi")):
+            continue
+
+        parts = [p for p in re.split(r"\s*,\s*|\s+", line) if p]
+        if len(parts) < 19:
+            continue
+
+        used = parse_memory_mb(parts[17])
+        total = parse_memory_mb(parts[18])
+        if used is None or total is None or total <= 0:
+            continue
+
+        # xpu_smi -q -m 没有稳定暴露顺序设备号，按输出行顺序映射到 0..N-1。
+        gpu_usages[len(gpu_usages)] = used / total * 100.0
+
     return gpu_usages
 
 
+def parse_xpu_smi_summary(output):
+    """兜底解析 xpu_smi 摘要输出中的 'usedMiB / totalMiB' 字段。"""
+    gpu_usages = {}
+    for line in output.splitlines():
+        m = re.search(r"([\d.]+)\s*MiB\s*/\s*([\d.]+)\s*MiB", line)
+        if not m:
+            continue
+        used = float(m.group(1))
+        total = float(m.group(2))
+        if total <= 0:
+            continue
+        gpu_usages[len(gpu_usages)] = used / total * 100.0
+    return gpu_usages
+
+
+def run_xpu_smi(args):
+    """运行 xpu_smi，失败时返回 None。"""
+    try:
+        result = subprocess.run(
+            [XPU_SMI_CMD] + args,
+            capture_output=True, text=True, timeout=30
+        )
+    except Exception as e:
+        log(f"{XPU_SMI_CMD} 调用失败: {e}")
+        return None
+
+    if result.returncode != 0:
+        msg = (result.stderr or result.stdout).strip()
+        log(f"{XPU_SMI_CMD} {' '.join(args)} 调用失败(code={result.returncode}): {msg[:300]}")
+        return None
+    return result.stdout
+
+
+def get_gpu_memory_usage():
+    """通过 xpu_smi 获取每块昆仑芯的显存使用率。"""
+    output = run_xpu_smi(["-m"])
+    if output:
+        gpu_usages = parse_xpu_smi_machine_readable(output)
+        if gpu_usages:
+            return gpu_usages
+
+    output = run_xpu_smi([])
+    if output:
+        gpu_usages = parse_xpu_smi_summary(output)
+        if gpu_usages:
+            return gpu_usages
+
+    return None
+
+
+def detect_num_gpus():
+    """优先通过 xpu_smi 自动发现设备数；失败时由 NUM_GPUS 兜底。"""
+    usages = get_gpu_memory_usage()
+    if not usages:
+        return None
+    return max(usages.keys()) + 1
+
+
+def get_effective_device_ids(detected_num_gpus):
+    """根据自动发现结果和环境变量筛选本次可用 XPU ID。"""
+    base_count = detected_num_gpus or NUM_GPUS
+    base_ids = list(range(base_count))
+
+    if DEVICE_IDS:
+        base_set = set(base_ids)
+        device_ids = [gpu_id for gpu_id in DEVICE_IDS if gpu_id in base_set]
+        invalid_device_ids = [gpu_id for gpu_id in DEVICE_IDS if gpu_id not in base_set]
+    else:
+        device_ids = base_ids
+        invalid_device_ids = []
+
+    if EXCLUDE_DEVICE_IDS:
+        excluded = set(EXCLUDE_DEVICE_IDS)
+        device_ids = [gpu_id for gpu_id in device_ids if gpu_id not in excluded]
+
+    return device_ids, invalid_device_ids
+
+
 def pick_gpu(gpu_lock_dict, gpu_lock):
-    """选择当前最空闲的 GPU"""
+    """选择当前最空闲的 XPU"""
     with gpu_lock:
         usages = get_gpu_memory_usage()
         if usages is None:
-            for i in range(NUM_GPUS):
+            for i in sorted(gpu_lock_dict):
                 if gpu_lock_dict[i] == 0:
                     gpu_lock_dict[i] = 1
                     return i
@@ -168,7 +453,7 @@ def pick_gpu(gpu_lock_dict, gpu_lock):
 
         best_gpu = None
         best_usage = 999.0
-        for gpu_id in range(NUM_GPUS):
+        for gpu_id in sorted(gpu_lock_dict):
             if gpu_lock_dict[gpu_id] == 0:
                 usage = usages.get(gpu_id, 999.0)
                 if usage < best_usage:
@@ -186,89 +471,314 @@ def release_gpu(gpu_id, gpu_lock_dict, gpu_lock):
         gpu_lock_dict[gpu_id] = 0
 
 
-def run_command(cmd, work_dir, gpu_id, output_dir, op_safe_name, cmd_type, timeout=CMD_TIMEOUT):
-    """在指定 GPU 上运行命令，同时保存完整输出到日志文件"""
-    # 设置 VLLM_PLUGINS="" 避免 vllm 算子注册冲突导致 crash
-    full_cmd = f"cd {work_dir} && VLLM_PLUGINS=\"\" CUDA_VISIBLE_DEVICES={gpu_id} {cmd}"
-    log(f"  [GPU {gpu_id}] 运行: {cmd[:120]}...")
-
-    # 日志文件路径
-    log_file = output_dir / f"{op_safe_name}_{cmd_type}.log"
-
-    start_time = datetime.now(timezone.utc)
+def reset_xpu(gpu_id):
+    """按需使用 xpu_smi 重置指定昆仑芯设备。"""
     try:
-        proc = subprocess.run(
+        log(f"  [XPU {gpu_id}] 重置设备 ...")
+        result = subprocess.run(
+            [XPU_SMI_CMD, "-r", "-i", str(gpu_id)],
+            capture_output=True, text=True, timeout=30
+        )
+        if result.returncode == 0:
+            log(f"  [XPU {gpu_id}] 重置成功")
+            return True
+        msg = (result.stderr or result.stdout).strip()
+        log(f"  [XPU {gpu_id}] 重置失败(code={result.returncode}): {msg[:300]}")
+        return False
+    except Exception as e:
+        log(f"  [XPU {gpu_id}] 重置异常: {e}")
+        return False
+
+
+def split_chained_command(cmd):
+    """将 CSV 中用 && 串起来的 pytest 命令拆开，便于逐段记录。"""
+    if not CONTINUE_CHAINS_ON_FAILURE:
+        return [cmd]
+    parts = [part.strip() for part in re.split(r"\s*&&\s*", cmd.strip()) if part.strip()]
+    return parts or [cmd]
+
+
+def build_full_cmd(cmd, work_dir, gpu_id):
+    env_prefix = " ".join(
+        [
+            'VLLM_PLUGINS=""',
+            "PYTHONUNBUFFERED=1",
+            f"{DEVICE_VISIBLE_ENV}={shlex.quote(str(gpu_id))}",
+        ]
+    )
+    return f"cd {shlex.quote(str(work_dir))} && {env_prefix} {cmd}"
+
+
+def terminate_process_group(proc, sig):
+    try:
+        os.killpg(proc.pid, sig)
+        return True
+    except ProcessLookupError:
+        return False
+    except Exception as e:
+        log(f"  终止进程组失败(pid={proc.pid}, signal={sig}): {e}")
+        return False
+
+
+def run_shell_capture(full_cmd, timeout):
+    """执行单段 shell 命令；超时时清理整个进程组，避免残留 pytest/benchmark。"""
+    start_time = datetime.now(timezone.utc)
+    stdout = ""
+    stderr = ""
+    timed_out = False
+    force_killed = False
+
+    try:
+        proc = subprocess.Popen(
             full_cmd,
             shell=True,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=timeout,
+            encoding="utf-8",
+            errors="replace",
             executable="/bin/bash",
+            start_new_session=True,
         )
+    except Exception as e:
         end_time = datetime.now(timezone.utc)
-        duration = (end_time - start_time).total_seconds()
-
-        # 保存完整日志
-        with open(log_file, "w", encoding="utf-8") as f:
-            f.write(f"# Command: {full_cmd}\n")
-            f.write(f"# Start: {start_time.isoformat()}\n")
-            f.write(f"# End: {end_time.isoformat()}\n")
-            f.write(f"# Duration: {duration}s\n")
-            f.write(f"# Exit Code: {proc.returncode}\n")
-            f.write(f"# GPU: {gpu_id}\n")
-            f.write("#" + "=" * 60 + "\n\n")
-            f.write("=== STDOUT ===\n")
-            f.write(proc.stdout)
-            f.write("\n\n=== STDERR ===\n")
-            f.write(proc.stderr)
-
-        log(f"  [GPU {gpu_id}] 日志已保存: {log_file}")
-
-        stdout_lines = proc.stdout.split("\n")
-        stderr_lines = proc.stderr.split("\n")
-
-        tail_lines = 80
-        stdout_tail = "\n".join(stdout_lines[-tail_lines:]) if len(stdout_lines) > tail_lines else proc.stdout
-        stderr_tail = "\n".join(stderr_lines[-tail_lines:]) if len(stderr_lines) > tail_lines else proc.stderr
-
-        result = {
-            "exit_code": proc.returncode,
-            "log_file": str(log_file),
-            "stdout_tail": stdout_tail,
-            "stderr_tail": stderr_tail,
+        return {
+            "exit_code": -127,
+            "stdout": "",
+            "stderr": str(e),
             "start_time": start_time.isoformat(),
             "end_time": end_time.isoformat(),
-            "duration_seconds": duration,
+            "duration_seconds": (end_time - start_time).total_seconds(),
             "timed_out": False,
+            "force_killed": False,
         }
 
-        benchmark_data = parse_benchmark_output(proc.stdout)
-        return result, benchmark_data
-
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
-        end_time = datetime.now(timezone.utc)
-        duration = (end_time - start_time).total_seconds()
-        log(f"  [GPU {gpu_id}] ⏰ 超时 ({timeout}s)")
+        timed_out = True
+        terminate_process_group(proc, signal.SIGTERM)
+        try:
+            stdout, stderr = proc.communicate(timeout=KILL_GRACE_SECONDS)
+        except subprocess.TimeoutExpired:
+            force_killed = True
+            terminate_process_group(proc, signal.SIGKILL)
+            stdout, stderr = proc.communicate()
 
-        # 保存超时日志
-        with open(log_file, "w", encoding="utf-8") as f:
-            f.write(f"# Command: {full_cmd}\n")
-            f.write(f"# Start: {start_time.isoformat()}\n")
-            f.write(f"# End: {end_time.isoformat()}\n")
-            f.write(f"# Duration: {duration}s\n")
-            f.write(f"# Status: TIMEOUT (>{timeout}s)\n")
-            f.write("#" + "=" * 60 + "\n")
+    end_time = datetime.now(timezone.utc)
+    return {
+        "exit_code": proc.returncode,
+        "stdout": stdout or "",
+        "stderr": stderr or "",
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.isoformat(),
+        "duration_seconds": (end_time - start_time).total_seconds(),
+        "timed_out": timed_out,
+        "force_killed": force_killed,
+    }
 
-        return {
-            "exit_code": -1,
-            "log_file": str(log_file),
-            "stdout_tail": "",
-            "stderr_tail": "TIMEOUT",
-            "start_time": start_time.isoformat(),
-            "end_time": end_time.isoformat(),
-            "duration_seconds": duration,
-            "timed_out": True,
-        }, None
+
+def tail_text(text, max_lines=80):
+    lines = (text or "").split("\n")
+    return "\n".join(lines[-max_lines:]) if len(lines) > max_lines else (text or "")
+
+
+def classify_command_result(result, cmd_type):
+    """把失败原因粗分类，供 Excel/后续特化 kernel 阶段使用。"""
+    if result.get("timed_out"):
+        return "timeout"
+
+    exit_code = result.get("exit_code")
+    combined = f"{result.get('stdout', '')}\n{result.get('stderr', '')}"
+    lower = combined.lower()
+
+    if exit_code == 0:
+        return "passed"
+    if exit_code in (-11, 139) or "segmentation fault" in lower or "segfault" in lower:
+        return "segfault"
+    if exit_code in (-9, 137) or result.get("force_killed"):
+        return "killed"
+    if "zerodivisionerror" in lower and cmd_type == "bench":
+        return "benchmark_harness_error"
+    if (
+        "triton.compiler.errors" in lower
+        or "xpu3-elfconv" in lower
+        or "lowering tt." in lower
+        or "ptxas" in lower
+        or "undefined" in lower and "__nv_" in lower
+    ):
+        return "compile_failed"
+    if (
+        "kl3channelcheckerrors" in lower
+        or "kernel exception" in lower
+        or "unspecified launch failure" in lower
+        or "cuda error" in lower and "launch" in lower
+        or "status=299" in lower
+        or "status=719" in lower
+    ):
+        return "xpu_runtime_error"
+    if (
+        "importerror" in lower
+        or "modulenotfounderror" in lower
+        or "collected 0 items" in lower
+        or "not found:" in lower
+    ):
+        return "collection_failed"
+    if cmd_type == "test" and (
+        "assertionerror" in lower
+        or "not equal" in lower
+        or "mismatched elements" in lower
+        or re.search(r"\bfailed\b", lower)
+    ):
+        return "accuracy_failed"
+    if cmd_type == "bench":
+        return "benchmark_failed"
+    return "process_failed"
+
+
+def is_run_through_failure_type(failure_type):
+    # 这里的 run_through 指测试框架完成并给出可记录结论；不代表结果通过。
+    return failure_type in ("passed", "accuracy_failed", "benchmark_failed")
+
+
+def count_failure_types(results):
+    counts = OrderedDict()
+    for result in results.values():
+        for section_name in ("test", "benchmark"):
+            info = result.get(section_name) or {}
+            failure_type = info.get("failure_type")
+            if not failure_type:
+                continue
+            key = f"{section_name}:{failure_type}"
+            counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+def combine_failure_types(segment_results):
+    failure_types = [r.get("failure_type", "process_failed") for r in segment_results]
+    if all(f == "passed" for f in failure_types):
+        return "passed"
+
+    priority = (
+        "timeout",
+        "segfault",
+        "killed",
+        "xpu_runtime_error",
+        "compile_failed",
+        "benchmark_harness_error",
+        "collection_failed",
+        "process_failed",
+        "accuracy_failed",
+        "benchmark_failed",
+    )
+    for failure_type in priority:
+        if failure_type in failure_types:
+            return failure_type
+    return next((f for f in failure_types if f != "passed"), "process_failed")
+
+
+def write_command_log(log_file, original_cmd, segment_results, aggregate):
+    with open(log_file, "w", encoding="utf-8") as f:
+        f.write(f"# Command: {original_cmd}\n")
+        f.write(f"# Start: {aggregate['start_time']}\n")
+        f.write(f"# End: {aggregate['end_time']}\n")
+        f.write(f"# Duration: {aggregate['duration_seconds']}s\n")
+        f.write(f"# Exit Code: {aggregate['exit_code']}\n")
+        f.write(f"# XPU: {aggregate['gpu_id']}\n")
+        f.write(f"# Failure Type: {aggregate['failure_type']}\n")
+        f.write(f"# Run Through: {aggregate['run_through']}\n")
+        if len(segment_results) > 1:
+            f.write(f"# Chain Mode: continue_on_failure={CONTINUE_CHAINS_ON_FAILURE}\n")
+        if aggregate.get("timed_out"):
+            f.write(f"# Status: TIMEOUT (>{aggregate['timeout']}s)\n")
+        f.write("#" + "=" * 60 + "\n\n")
+
+        for idx, segment in enumerate(segment_results, start=1):
+            if len(segment_results) > 1:
+                f.write(f"\n\n=== SEGMENT {idx}/{len(segment_results)} ===\n")
+                f.write(f"# Command: {segment['command']}\n")
+                f.write(f"# Full Command: {segment['full_command']}\n")
+                f.write(f"# Exit Code: {segment['exit_code']}\n")
+                f.write(f"# Failure Type: {segment['failure_type']}\n")
+                f.write(f"# Run Through: {segment['run_through']}\n")
+                f.write(f"# Duration: {segment['duration_seconds']}s\n")
+                f.write("#" + "-" * 60 + "\n")
+
+            f.write("=== STDOUT ===\n")
+            f.write(segment.get("stdout", ""))
+            f.write("\n\n=== STDERR ===\n")
+            f.write(segment.get("stderr", ""))
+
+
+def run_command(cmd, work_dir, gpu_id, output_dir, op_safe_name, cmd_type, timeout=CMD_TIMEOUT):
+    """在指定昆仑芯设备上运行命令，同时保存完整输出到日志文件"""
+    log_file = output_dir / f"{op_safe_name}_{cmd_type}.log"
+    segments = split_chained_command(cmd)
+    if len(segments) > 1:
+        log(f"  [XPU {gpu_id}] 运行链式命令 {len(segments)} 段: {cmd[:120]}...")
+    else:
+        log(f"  [XPU {gpu_id}] 运行: {cmd[:120]}...")
+
+    aggregate_start = datetime.now(timezone.utc)
+    segment_results = []
+    for idx, segment_cmd in enumerate(segments, start=1):
+        full_cmd = build_full_cmd(segment_cmd, work_dir, gpu_id)
+        if len(segments) > 1:
+            log(f"  [XPU {gpu_id}]   段 {idx}/{len(segments)}: {segment_cmd[:100]}...")
+
+        segment = run_shell_capture(full_cmd, timeout)
+        segment["command"] = segment_cmd
+        segment["full_command"] = full_cmd
+        segment["failure_type"] = classify_command_result(segment, cmd_type)
+        segment["run_through"] = is_run_through_failure_type(segment["failure_type"])
+        segment_results.append(segment)
+
+        if segment["timed_out"]:
+            log(f"  [XPU {gpu_id}] ⏰ 超时 ({timeout}s)，停止该链式命令后续段")
+            break
+
+    aggregate_end = datetime.now(timezone.utc)
+    exit_code = next((r["exit_code"] for r in segment_results if r["exit_code"] != 0), 0)
+    stdout = "\n".join(r.get("stdout", "") for r in segment_results)
+    stderr = "\n".join(r.get("stderr", "") for r in segment_results)
+    failure_type = combine_failure_types(segment_results)
+    run_through = all(r.get("run_through", False) for r in segment_results)
+
+    result = {
+        "exit_code": exit_code,
+        "log_file": str(log_file),
+        "stdout_tail": tail_text(stdout),
+        "stderr_tail": tail_text(stderr),
+        "start_time": aggregate_start.isoformat(),
+        "end_time": aggregate_end.isoformat(),
+        "duration_seconds": (aggregate_end - aggregate_start).total_seconds(),
+        "timed_out": any(r.get("timed_out", False) for r in segment_results),
+        "force_killed": any(r.get("force_killed", False) for r in segment_results),
+        "failure_type": failure_type,
+        "run_through": run_through,
+        "timeout": timeout,
+        "gpu_id": gpu_id,
+        "segments": [
+            {
+                "command": r["command"],
+                "exit_code": r["exit_code"],
+                "start_time": r["start_time"],
+                "end_time": r["end_time"],
+                "duration_seconds": r["duration_seconds"],
+                "timed_out": r["timed_out"],
+                "force_killed": r["force_killed"],
+                "failure_type": r["failure_type"],
+                "run_through": r["run_through"],
+            }
+            for r in segment_results
+        ],
+    }
+
+    write_command_log(log_file, cmd, segment_results, result)
+    log(f"  [XPU {gpu_id}] 日志已保存: {log_file}")
+
+    benchmark_data = parse_benchmark_output(stdout)
+    return result, benchmark_data
 
 
 def parse_benchmark_output(stdout):
@@ -312,6 +822,389 @@ def parse_benchmark_output(stdout):
                 data.append(entry)
 
     return data if data else None
+
+
+def atomic_write_json(path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f".{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+    os.replace(tmp_path, path)
+
+
+def write_operator_checkpoint(checkpoint_dir, op_name, result, checkpoint_lock):
+    payload = OrderedDict(
+        [
+            ("schema_version", 1),
+            ("operator", op_name),
+            ("safe_name", get_safe_filename(op_name)),
+            ("written_at", datetime.now(timezone.utc).isoformat()),
+            ("result", result),
+        ]
+    )
+    checkpoint_path = checkpoint_dir / f"{get_safe_filename(op_name)}.json"
+    if checkpoint_lock:
+        with checkpoint_lock:
+            atomic_write_json(checkpoint_path, payload)
+    else:
+        atomic_write_json(checkpoint_path, payload)
+
+
+def load_json_file(path):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        log(f"  ⚠ 读取 JSON 失败，跳过 {path}: {e}")
+        return None
+
+
+def load_summary_resume_candidates(output_dir):
+    candidates = {}
+    sources = {}
+    summary_files = sorted(
+        output_dir.glob("summary_*.json"),
+        key=lambda p: p.stat().st_mtime,
+    )
+    for summary_path in summary_files:
+        data = load_json_file(summary_path)
+        if not data:
+            continue
+        operators = data.get("operators")
+        if not isinstance(operators, dict):
+            continue
+        for op_name, result in operators.items():
+            if isinstance(result, dict):
+                candidates[op_name] = result
+                sources[op_name] = f"summary:{summary_path.name}"
+    return candidates, sources
+
+
+def load_checkpoint_resume_candidates(output_dir):
+    candidates = {}
+    sources = {}
+    checkpoint_dir = output_dir / CHECKPOINT_DIR_NAME
+    if not checkpoint_dir.is_dir():
+        return candidates, sources
+
+    for checkpoint_path in sorted(checkpoint_dir.glob("*.json")):
+        data = load_json_file(checkpoint_path)
+        if not data:
+            continue
+        op_name = data.get("operator")
+        result = data.get("result")
+        if op_name and isinstance(result, dict):
+            candidates[op_name] = result
+            sources[op_name] = "checkpoint"
+    return candidates, sources
+
+
+def parse_bool_value(value):
+    if value is None:
+        return None
+    lowered = str(value).strip().lower()
+    if lowered in ("1", "true", "yes", "on"):
+        return True
+    if lowered in ("0", "false", "no", "off"):
+        return False
+    return None
+
+
+def parse_int_value(value):
+    if value is None:
+        return None
+    try:
+        return int(str(value).strip())
+    except ValueError:
+        return None
+
+
+def parse_float_value(value):
+    if value is None:
+        return None
+    cleaned = str(value).strip().rstrip("s")
+    try:
+        return float(cleaned)
+    except ValueError:
+        return None
+
+
+def parse_command_log_text(text):
+    header = OrderedDict()
+    for line in text.splitlines():
+        if line.startswith("#="):
+            break
+        if not line.startswith("#"):
+            continue
+        item = line[1:].strip()
+        if not item or item.startswith("=") or ":" not in item:
+            continue
+        key, value = item.split(":", 1)
+        header.setdefault(key.strip(), value.strip())
+
+    stdout_chunks = re.findall(
+        r"=== STDOUT ===\n(.*?)(?=\n\n=== STDERR ===|\Z)",
+        text,
+        flags=re.S,
+    )
+    stderr_chunks = re.findall(
+        r"=== STDERR ===\n(.*?)(?=\n\n=== SEGMENT \d+/\d+ ===|\Z)",
+        text,
+        flags=re.S,
+    )
+    return header, "\n".join(stdout_chunks), "\n".join(stderr_chunks)
+
+
+def parse_command_log(log_file, expected_cmd, cmd_type):
+    try:
+        text = log_file.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    if not text.strip():
+        return None
+    if "=== STDOUT ===" not in text or "=== STDERR ===" not in text:
+        return None
+
+    header, stdout, stderr = parse_command_log_text(text)
+    status_text = header.get("Status", "")
+    timed_out = "timeout" in status_text.lower()
+    exit_code = parse_int_value(header.get("Exit Code"))
+    if exit_code is None and timed_out:
+        exit_code = -1
+    if not header.get("End") or exit_code is None:
+        return None
+
+    duration = parse_float_value(header.get("Duration"))
+    gpu_id = parse_int_value(header.get("XPU"))
+    if gpu_id is None:
+        gpu_id = parse_int_value(header.get("GPU"))
+    force_killed = parse_bool_value(header.get("Force Killed")) or False
+    failure_type = header.get("Failure Type")
+    if not failure_type:
+        failure_type = classify_command_result(
+            {
+                "exit_code": exit_code,
+                "stdout": stdout,
+                "stderr": stderr,
+                "timed_out": timed_out,
+                "force_killed": force_killed,
+            },
+            cmd_type,
+        )
+    if failure_type == "timeout":
+        timed_out = True
+
+    run_through = parse_bool_value(header.get("Run Through"))
+    if run_through is None:
+        run_through = is_run_through_failure_type(failure_type)
+
+    command = expected_cmd or header.get("Command")
+    passed = exit_code == 0 and not timed_out
+    info = {
+        "command": command,
+        "passed": passed,
+        "run_through": run_through,
+        "exit_code": exit_code,
+        "failure_type": failure_type,
+        "log_file": str(log_file),
+        "start_time": header.get("Start", ""),
+        "end_time": header.get("End", ""),
+        "duration_seconds": duration,
+        "timed_out": timed_out,
+        "force_killed": force_killed,
+        "segments": [
+            {
+                "command": command,
+                "exit_code": exit_code,
+                "start_time": header.get("Start", ""),
+                "end_time": header.get("End", ""),
+                "duration_seconds": duration,
+                "timed_out": timed_out,
+                "force_killed": force_killed,
+                "failure_type": failure_type,
+                "run_through": run_through,
+            }
+        ],
+        "stderr_tail": tail_text(stderr)[-2000:] if stderr else "",
+    }
+    if cmd_type == "bench":
+        info["data"] = parse_benchmark_output(stdout)
+
+    return {
+        "info": info,
+        "passed": passed,
+        "run_through": run_through,
+        "duration_seconds": duration or 0.0,
+        "gpu_id": gpu_id,
+    }
+
+
+def build_result_from_existing_logs(op_name, op_info, csv_commands, output_dir):
+    cmd_info = csv_commands.get(op_name)
+    if not cmd_info:
+        return None, "CSV 中未找到匹配命令"
+
+    test_cmd = strip_gpu_prefix(cmd_info.get("test_cmd", ""))
+    bench_cmd = strip_gpu_prefix(cmd_info.get("bench_cmd", ""))
+    if not test_cmd and not bench_cmd:
+        return {
+            "status": "skipped",
+            "skip_reason": "CSV 命令为空",
+            "source_sheet": op_info.get("source_sheet", ""),
+            "recovered_from": "metadata",
+        }, None
+
+    worktree_path = find_worktree_dir(op_name)
+    if not worktree_path:
+        return None, "Worktree 目录不存在"
+
+    safe_name = get_safe_filename(op_name)
+    test_passed = None
+    test_run_through = None
+    test_info = None
+    bench_passed = None
+    bench_run_through = None
+    bench_info = None
+    duration_seconds = 0.0
+    gpu_ids = []
+
+    if RUN_ACCURACY and test_cmd:
+        parsed = parse_command_log(output_dir / f"{safe_name}_test.log", test_cmd, "test")
+        if not parsed:
+            return None, "精度日志缺失或不完整"
+        test_info = parsed["info"]
+        test_passed = parsed["passed"]
+        test_run_through = parsed["run_through"]
+        duration_seconds += parsed["duration_seconds"]
+        if parsed["gpu_id"] is not None:
+            gpu_ids.append(parsed["gpu_id"])
+    elif not RUN_ACCURACY:
+        test_info = {"command": test_cmd or None, "passed": None, "note": "KUNLUN_RUN_ACCURACY=0，未运行精度测试"}
+    else:
+        test_info = {"command": None, "passed": None, "note": "CSV 中无测试命令"}
+
+    if RUN_BENCHMARK and bench_cmd:
+        parsed = parse_command_log(output_dir / f"{safe_name}_bench.log", bench_cmd, "bench")
+        if not parsed:
+            return None, "Benchmark 日志缺失或不完整"
+        bench_info = parsed["info"]
+        bench_passed = parsed["passed"]
+        bench_run_through = parsed["run_through"]
+        duration_seconds += parsed["duration_seconds"]
+        if parsed["gpu_id"] is not None:
+            gpu_ids.append(parsed["gpu_id"])
+    elif not RUN_BENCHMARK:
+        bench_info = {"command": bench_cmd or None, "passed": None, "note": "KUNLUN_RUN_BENCHMARK=0，未运行 Benchmark"}
+    else:
+        bench_info = {"command": None, "passed": None, "note": "CSV 中无 Benchmark 命令"}
+
+    if test_passed is False or bench_passed is False:
+        overall_status = "failed"
+    elif test_passed is True or bench_passed is True:
+        overall_status = "success"
+    else:
+        overall_status = "skipped"
+
+    run_through_values = [
+        value
+        for value in (test_run_through, bench_run_through)
+        if value is not None
+    ]
+
+    return {
+        "status": overall_status,
+        "gpu_id": gpu_ids[0] if gpu_ids else None,
+        "worktree_path": worktree_path,
+        "source_sheet": op_info.get("source_sheet", ""),
+        "duration_seconds": round(duration_seconds, 1),
+        "accuracy_passed": test_passed,
+        "benchmark_passed": bench_passed,
+        "accuracy_run_through": test_run_through,
+        "benchmark_run_through": bench_run_through,
+        "run_through": all(run_through_values) if run_through_values else None,
+        "test": test_info,
+        "benchmark": bench_info,
+        "recovered_from": "logs",
+    }, None
+
+
+def command_result_complete(info):
+    if not isinstance(info, dict):
+        return False
+    if "passed" not in info or info.get("exit_code") is None:
+        return False
+    log_file = info.get("log_file")
+    return bool(log_file and Path(log_file).is_file())
+
+
+def operator_result_complete_for_current_run(op_name, result, csv_commands):
+    if not isinstance(result, dict):
+        return False
+
+    status = result.get("status")
+    if status not in ("success", "failed", "skipped"):
+        return False
+
+    cmd_info = csv_commands.get(op_name)
+    if not cmd_info:
+        return status == "skipped"
+
+    test_cmd = strip_gpu_prefix(cmd_info.get("test_cmd", ""))
+    bench_cmd = strip_gpu_prefix(cmd_info.get("bench_cmd", ""))
+    requires_test = RUN_ACCURACY and bool(test_cmd)
+    requires_bench = RUN_BENCHMARK and bool(bench_cmd)
+
+    if status == "skipped" and (requires_test or requires_bench):
+        return False
+    if requires_test and not command_result_complete(result.get("test")):
+        return False
+    if requires_bench and not command_result_complete(result.get("benchmark")):
+        return False
+    return True
+
+
+def copy_result_with_resume_source(result, source):
+    copied = dict(result)
+    copied["resume_source"] = source
+    return copied
+
+
+def count_source(source_counts, source):
+    source_counts[source] = source_counts.get(source, 0) + 1
+
+
+def load_resume_results(output_dir, matched, csv_commands):
+    summary_candidates, summary_sources = load_summary_resume_candidates(output_dir)
+    checkpoint_candidates, checkpoint_sources = load_checkpoint_resume_candidates(output_dir)
+
+    candidates = {}
+    sources = {}
+    candidates.update(summary_candidates)
+    sources.update(summary_sources)
+    candidates.update(checkpoint_candidates)
+    sources.update(checkpoint_sources)
+
+    restored = {}
+    source_counts = OrderedDict()
+    incomplete_reasons = OrderedDict()
+
+    for op_name, op_info in matched:
+        candidate = candidates.get(op_name)
+        source = sources.get(op_name, "unknown")
+        if operator_result_complete_for_current_run(op_name, candidate, csv_commands):
+            restored[op_name] = copy_result_with_resume_source(candidate, source)
+            count_source(source_counts, source)
+            continue
+
+        log_result, reason = build_result_from_existing_logs(op_name, op_info, csv_commands, output_dir)
+        if operator_result_complete_for_current_run(op_name, log_result, csv_commands):
+            restored[op_name] = copy_result_with_resume_source(log_result, "logs")
+            count_source(source_counts, "logs")
+        elif reason:
+            incomplete_reasons[op_name] = reason
+
+    return restored, source_counts, incomplete_reasons
 
 
 def process_operator(op_name, op_info, csv_commands, results, gpu_lock_dict, gpu_lock, output_dir):
@@ -360,63 +1253,83 @@ def process_operator(op_name, op_info, csv_commands, results, gpu_lock_dict, gpu
         gpu_id = pick_gpu(gpu_lock_dict, gpu_lock)
         if gpu_id is not None:
             break
-        log(f"  ⏳ GPU 全忙 (retry {retry+1})，等待 30 秒...")
+        log(f"  ⏳ XPU 全忙 (retry {retry+1})，等待 30 秒...")
         time.sleep(30)
 
     if gpu_id is None:
-        log(f"  ⚠ {op_name} 无可用 GPU，跳过")
+        log(f"  ⚠ {op_name} 无可用 XPU，跳过")
         results[op_name] = {
             "status": "skipped",
-            "skip_reason": "无可用 GPU",
+            "skip_reason": "无可用 XPU",
             "source_sheet": op_info.get("source_sheet", ""),
         }
         return
 
+    if RESET_XPU_BEFORE_RUN:
+        reset_xpu(gpu_id)
+        time.sleep(2)
+
     op_start = time.time()
 
     try:
-        log(f"  [GPU {gpu_id}] 开始测试 {op_name}")
+        log(f"  [XPU {gpu_id}] 开始测试 {op_name}")
 
         # 4. 运行精度测试
         test_passed = None
+        test_run_through = None
         test_info = None
-        if test_cmd:
-            log(f"  [GPU {gpu_id}] 精度测试: {test_cmd[:100]}...")
-            test_result_data, _ = run_command(test_cmd, worktree_path, gpu_id, output_dir, op_safe_name, "test", CMD_TIMEOUT)
+        if RUN_ACCURACY and test_cmd:
+            log(f"  [XPU {gpu_id}] 精度测试: {test_cmd[:100]}...")
+            test_result_data, _ = run_command(test_cmd, worktree_path, gpu_id, output_dir, op_safe_name, "test", ACCURACY_TIMEOUT)
             test_passed = test_result_data["exit_code"] == 0 and not test_result_data["timed_out"]
+            test_run_through = test_result_data["run_through"]
             test_info = {
                 "command": test_cmd,
                 "passed": test_passed,
+                "run_through": test_run_through,
                 "exit_code": test_result_data["exit_code"],
+                "failure_type": test_result_data["failure_type"],
                 "log_file": test_result_data["log_file"],
                 "start_time": test_result_data["start_time"],
                 "end_time": test_result_data["end_time"],
                 "duration_seconds": test_result_data["duration_seconds"],
                 "timed_out": test_result_data["timed_out"],
+                "force_killed": test_result_data["force_killed"],
+                "segments": test_result_data["segments"],
                 "stderr_tail": test_result_data["stderr_tail"][-2000:] if test_result_data["stderr_tail"] else "",
             }
+        elif not RUN_ACCURACY:
+            test_info = {"command": test_cmd or None, "passed": None, "note": "KUNLUN_RUN_ACCURACY=0，未运行精度测试"}
         else:
             test_info = {"command": None, "passed": None, "note": "CSV 中无测试命令"}
 
         # 5. 运行 Benchmark
         bench_passed = None
+        bench_run_through = None
         bench_info = None
-        if bench_cmd:
-            log(f"  [GPU {gpu_id}] Benchmark: {bench_cmd[:100]}...")
-            bench_result_data, bench_data = run_command(bench_cmd, worktree_path, gpu_id, output_dir, op_safe_name, "bench", CMD_TIMEOUT)
+        if RUN_BENCHMARK and bench_cmd:
+            log(f"  [XPU {gpu_id}] Benchmark: {bench_cmd[:100]}...")
+            bench_result_data, bench_data = run_command(bench_cmd, worktree_path, gpu_id, output_dir, op_safe_name, "bench", BENCHMARK_TIMEOUT)
             bench_passed = bench_result_data["exit_code"] == 0 and not bench_result_data["timed_out"]
+            bench_run_through = bench_result_data["run_through"]
             bench_info = {
                 "command": bench_cmd,
                 "passed": bench_passed,
+                "run_through": bench_run_through,
                 "exit_code": bench_result_data["exit_code"],
+                "failure_type": bench_result_data["failure_type"],
                 "log_file": bench_result_data["log_file"],
                 "start_time": bench_result_data["start_time"],
                 "end_time": bench_result_data["end_time"],
                 "duration_seconds": bench_result_data["duration_seconds"],
                 "timed_out": bench_result_data["timed_out"],
+                "force_killed": bench_result_data["force_killed"],
+                "segments": bench_result_data["segments"],
                 "stderr_tail": bench_result_data["stderr_tail"][-2000:] if bench_result_data["stderr_tail"] else "",
                 "data": bench_data,
             }
+        elif not RUN_BENCHMARK:
+            bench_info = {"command": bench_cmd or None, "passed": None, "note": "KUNLUN_RUN_BENCHMARK=0，未运行 Benchmark"}
         else:
             bench_info = {"command": None, "passed": None, "note": "CSV 中无 Benchmark 命令"}
 
@@ -428,6 +1341,12 @@ def process_operator(op_name, op_info, csv_commands, results, gpu_lock_dict, gpu
         else:
             overall_status = "skipped"
 
+        run_through_values = [
+            value
+            for value in (test_run_through, bench_run_through)
+            if value is not None
+        ]
+
         test_result = {
             "status": overall_status,
             "gpu_id": gpu_id,
@@ -436,12 +1355,15 @@ def process_operator(op_name, op_info, csv_commands, results, gpu_lock_dict, gpu
             "duration_seconds": round(time.time() - op_start, 1),
             "accuracy_passed": test_passed,
             "benchmark_passed": bench_passed,
+            "accuracy_run_through": test_run_through,
+            "benchmark_run_through": bench_run_through,
+            "run_through": all(run_through_values) if run_through_values else None,
             "test": test_info,
             "benchmark": bench_info,
         }
 
     except Exception as e:
-        log(f"  [GPU {gpu_id}] ❌ {op_name} 异常: {e}")
+        log(f"  [XPU {gpu_id}] ❌ {op_name} 异常: {e}")
         import traceback
         traceback.print_exc()
         test_result = {
@@ -450,6 +1372,7 @@ def process_operator(op_name, op_info, csv_commands, results, gpu_lock_dict, gpu
             "worktree_path": worktree_path,
             "source_sheet": op_info.get("source_sheet", ""),
             "error_message": str(e),
+            "run_through": False,
             "duration_seconds": round(time.time() - op_start, 1),
         }
 
@@ -459,27 +1382,62 @@ def process_operator(op_name, op_info, csv_commands, results, gpu_lock_dict, gpu
     results[op_name] = test_result
     summary_status = test_result['status']
     dur = test_result['duration_seconds']
-    log(f"  {'✅' if summary_status == 'success' else '❌' if summary_status == 'failed' else '⚠️'} {op_name} -> {summary_status} (GPU {gpu_id}, {dur:.0f}s)")
+    log(f"  {'✅' if summary_status == 'success' else '❌' if summary_status == 'failed' else '⚠️'} {op_name} -> {summary_status} (XPU {gpu_id}, {dur:.0f}s)")
 
 
-def worker_thread(operator_list, csv_commands, shared_results, gpu_lock_dict, gpu_lock, output_dir):
+def worker_thread(
+    operator_list,
+    csv_commands,
+    shared_results,
+    gpu_lock_dict,
+    gpu_lock,
+    output_dir,
+    checkpoint_dir=None,
+    checkpoint_lock=None,
+    progress_update=None,
+):
     """工作线程"""
     for op_name, op_info in operator_list:
         if op_name in shared_results:
             continue
         process_operator(op_name, op_info, csv_commands, shared_results, gpu_lock_dict, gpu_lock, output_dir)
+        if checkpoint_dir and op_name in shared_results:
+            write_operator_checkpoint(checkpoint_dir, op_name, shared_results[op_name], checkpoint_lock)
+        if progress_update:
+            progress_update()
 
 
 def main():
     global_start = datetime.now(timezone.utc)
     log("=" * 60)
-    log("沐曦 MetaX C550 并行测试脚本启动")
+    log("昆仑芯 P800 并行测试脚本启动")
     log(f"时间戳: {global_start.isoformat()}")
+    log(f"工作目录: {WORK_DIR}")
+    log(f"FlagGems: {FLAGGEMS_BASE}")
+    log(f"worktrees: {WORKTREES_DIR}")
+    log(f"Excel: {EXCEL_PATH}")
+    log(f"CSV: {CSV_PATH}")
+    log(f"xpu_smi 命令: {XPU_SMI_CMD}")
+    log(f"Python 命令: {PYTHON_BIN}")
+    log(f"设备可见变量: {DEVICE_VISIBLE_ENV}")
+    log(
+        f"配置卡数: {NUM_GPUS} | 默认超时: {CMD_TIMEOUT}s | "
+        f"精度超时: {ACCURACY_TIMEOUT}s | Benchmark超时: {BENCHMARK_TIMEOUT}s | "
+        f"重置 XPU: {RESET_XPU_BEFORE_RUN}"
+    )
+    log(f"设备筛选: DEVICE_IDS={DEVICE_IDS or '自动'} | EXCLUDE_DEVICE_IDS={EXCLUDE_DEVICE_IDS or '无'}")
+    log(
+        f"调试过滤: ONLY_OPS={ONLY_OPS or '全部'} | SKIP_OPS={SKIP_OPS or '无'} | "
+        f"START_INDEX={START_INDEX} | BATCH_SIZE={BATCH_SIZE or '不限'} | MAX_OPS={MAX_OPS or '不限'}"
+    )
+    log(f"运行内容: 精度={RUN_ACCURACY} | Benchmark={RUN_BENCHMARK}")
+    log(f"链式命令失败后继续: {CONTINUE_CHAINS_ON_FAILURE}")
+    log(f"断点续跑: {RESUME} | 输出目录变量: {OUTPUT_DIR_ENV or '默认'}")
     log("=" * 60)
 
     # 创建输出目录
     date_str = global_start.strftime("%Y%m%d")
-    output_dir = WORK_DIR / f"test_results_{date_str}"
+    output_dir = Path(OUTPUT_DIR_ENV).expanduser() if OUTPUT_DIR_ENV else WORK_DIR / f"test_results_{date_str}"
     output_dir.mkdir(parents=True, exist_ok=True)
     log(f"输出目录: {output_dir}")
 
@@ -496,7 +1454,23 @@ def main():
     matched = []
     unmatched = []
     no_dir = []
-    for op_name, op_info in operators.items():
+
+    operator_items = list(operators.items())
+    if ONLY_OPS:
+        only_set = set(ONLY_OPS)
+        operator_items = [(op, info) for op, info in operator_items if op in only_set]
+        missing_only_ops = sorted(only_set - set(operators.keys()))
+        log(f"  指定算子过滤: {len(operator_items)} 个在 Excel 中找到")
+        if missing_only_ops:
+            log(f"  指定算子不在 Excel 中: {', '.join(missing_only_ops)}")
+
+    if SKIP_OPS:
+        skip_set = set(SKIP_OPS)
+        before_skip = len(operator_items)
+        operator_items = [(op, info) for op, info in operator_items if op not in skip_set]
+        log(f"  跳过算子过滤: {before_skip - len(operator_items)} 个")
+
+    for op_name, op_info in operator_items:
         if op_name not in csv_commands:
             unmatched.append(op_name)
             continue
@@ -506,6 +1480,17 @@ def main():
             continue
         matched.append((op_name, op_info))
 
+    if START_INDEX > 0:
+        log(f"  START_INDEX={START_INDEX}，从可执行队列第 {START_INDEX} 个之后开始")
+        matched = matched[START_INDEX:]
+
+    if BATCH_SIZE > 0 and len(matched) > BATCH_SIZE:
+        log(f"  BATCH_SIZE={BATCH_SIZE}，截取当前窗口前 {BATCH_SIZE} 个")
+        matched = matched[:BATCH_SIZE]
+    elif MAX_OPS > 0 and len(matched) > MAX_OPS:
+        log(f"  MAX_OPS={MAX_OPS}，从 {len(matched)} 个可执行算子中截取前 {MAX_OPS} 个")
+        matched = matched[:MAX_OPS]
+
     log(f"  可执行: {len(matched)} 个")
     log(f"  无 CSV 命令: {len(unmatched)} 个")
     log(f"  无 worktree 目录: {len(no_dir)} 个")
@@ -514,32 +1499,90 @@ def main():
         log("没有可测试的算子，退出")
         return
 
+    matched_total = len(matched)
+    shared_results = {}
+    resume_source_counts = OrderedDict()
+    resume_incomplete_reasons = OrderedDict()
+
+    if RESUME:
+        log(f"\n  断点续跑: 扫描已有结果 {output_dir}")
+        restored_results, resume_source_counts, resume_incomplete_reasons = load_resume_results(
+            output_dir,
+            matched,
+            csv_commands,
+        )
+        shared_results.update(restored_results)
+        matched = [(op, info) for op, info in matched if op not in shared_results]
+        log(f"  已恢复: {len(restored_results)} 个 | 待运行: {len(matched)} 个")
+        if resume_source_counts:
+            log(f"  恢复来源统计: {dict(resume_source_counts)}")
+        if resume_incomplete_reasons:
+            examples = list(resume_incomplete_reasons.items())[:10]
+            reason_text = "; ".join(f"{op}: {reason}" for op, reason in examples)
+            log(f"  仍需运行示例: {reason_text}")
+
     log(f"\n  最终测试队列: {len(matched)} 个算子")
     for op_name, _ in matched:
         log(f"    - {op_name}")
 
     # 4. 并行执行
-    log(f"\n[Step 4/4] 使用 {NUM_GPUS} 块 GPU 并行测试...")
+    detected_num_gpus = None
+    effective_num_gpus = 0
+    device_ids = []
+    invalid_device_ids = []
+    checkpoint_dir = output_dir / CHECKPOINT_DIR_NAME if RESUME else None
+    checkpoint_lock = threading.Lock() if checkpoint_dir else None
 
-    gpu_lock_dict = {i: 0 for i in range(NUM_GPUS)}
-    gpu_lock = threading.Lock()
-    shared_results = {}
+    if matched:
+        detected_num_gpus = detect_num_gpus()
+        effective_num_gpus = detected_num_gpus or NUM_GPUS
+        if detected_num_gpus is None:
+            log(f"xpu_smi 未能发现设备数，使用配置卡数: {effective_num_gpus}")
+        else:
+            log(f"xpu_smi 发现设备数: {effective_num_gpus}")
 
-    num_threads = min(NUM_GPUS, len(matched))
-    chunk_size = (len(matched) + num_threads - 1) // num_threads
-    chunks = [matched[i:i+chunk_size] for i in range(0, len(matched), chunk_size)]
+        device_ids, invalid_device_ids = get_effective_device_ids(detected_num_gpus)
+        effective_num_gpus = len(device_ids)
+        if invalid_device_ids:
+            log(f"请求的 XPU ID 不存在，已忽略: {invalid_device_ids}")
+        if not device_ids:
+            log("没有可用的 XPU ID，退出")
+            return
 
-    threads = []
-    for chunk in chunks:
-        t = threading.Thread(
-            target=worker_thread,
-            args=(chunk, csv_commands, shared_results, gpu_lock_dict, gpu_lock, output_dir),
-        )
-        t.start()
-        threads.append(t)
+        log(f"\n[Step 4/4] 使用 {effective_num_gpus} 块 XPU 并行测试: {device_ids}")
 
-    for t in threads:
-        t.join()
+        gpu_lock_dict = {i: 0 for i in device_ids}
+        gpu_lock = threading.Lock()
+
+        num_threads = min(effective_num_gpus, len(matched))
+        chunk_size = (len(matched) + num_threads - 1) // num_threads
+        chunks = [matched[i:i+chunk_size] for i in range(0, len(matched), chunk_size)]
+
+        progress_initial = matched_total - len(matched) if RESUME else 0
+        with OperatorProgress(matched_total, progress_initial) as progress:
+            threads = []
+            for chunk in chunks:
+                t = threading.Thread(
+                    target=worker_thread,
+                    args=(
+                        chunk,
+                        csv_commands,
+                        shared_results,
+                        gpu_lock_dict,
+                        gpu_lock,
+                        output_dir,
+                        checkpoint_dir,
+                        checkpoint_lock,
+                        progress.update,
+                    ),
+                )
+                t.start()
+                threads.append(t)
+
+            for t in threads:
+                t.join()
+    else:
+        log("\n[Step 4/4] 断点续跑已恢复所有可执行算子，跳过执行")
 
     global_end = datetime.now(timezone.utc)
 
@@ -548,16 +1591,47 @@ def main():
     success = sum(1 for v in shared_results.values() if v.get("status") == "success")
     failed = sum(1 for v in shared_results.values() if v.get("status") in ("failed", "error", "partial"))
     skipped = sum(1 for v in shared_results.values() if v.get("status") == "skipped")
+    run_through = sum(1 for v in shared_results.values() if v.get("run_through") is True)
+    not_run_through = sum(1 for v in shared_results.values() if v.get("run_through") is False)
+    failure_type_counts = count_failure_types(shared_results)
 
     summary = {
         "total_operators_in_excel": total,
-        "matched_and_attempted": len(matched),
+        "matched_and_attempted": matched_total,
         "success": success,
         "failed": failed,
         "skipped": skipped,
+        "run_through": run_through,
+        "not_run_through": not_run_through,
+        "failure_type_counts": failure_type_counts,
         "unmatched_no_csv_command": len(unmatched),
         "no_worktree_directory": len(no_dir),
         "total_duration_seconds": round((global_end - global_start).total_seconds(), 1),
+        "vendor": "kunlunxin",
+        "xpu_smi_cmd": XPU_SMI_CMD,
+        "python_bin": PYTHON_BIN,
+        "visible_devices_env": DEVICE_VISIBLE_ENV,
+        "configured_num_gpus": NUM_GPUS,
+        "effective_num_gpus": effective_num_gpus,
+        "device_ids": device_ids,
+        "requested_device_ids": list(DEVICE_IDS),
+        "excluded_device_ids": list(EXCLUDE_DEVICE_IDS),
+        "invalid_requested_device_ids": invalid_device_ids,
+        "reset_xpu_before_run": RESET_XPU_BEFORE_RUN,
+        "only_ops": list(ONLY_OPS),
+        "skip_ops": list(SKIP_OPS),
+        "start_index": START_INDEX,
+        "batch_size": BATCH_SIZE,
+        "max_ops": MAX_OPS,
+        "run_accuracy": RUN_ACCURACY,
+        "run_benchmark": RUN_BENCHMARK,
+        "continue_chains_on_failure": CONTINUE_CHAINS_ON_FAILURE,
+        "output_dir_env": OUTPUT_DIR_ENV,
+        "resume": RESUME,
+        "resume_recovered": matched_total - len(matched) if RESUME else 0,
+        "pending_executed_this_run": len(matched),
+        "resume_source_counts": resume_source_counts,
+        "checkpoint_dir": str(checkpoint_dir) if checkpoint_dir else "",
     }
 
     for op_name in unmatched:
@@ -592,7 +1666,12 @@ def main():
     log("测试完成！")
     log(f"结果目录: {output_dir}")
     log(f"汇总文件: {json_path}")
-    log(f"Excel 总计: {total} | 成功: {success} | 失败: {failed} | 跳过: {skipped}")
+    log(
+        f"Excel 总计: {total} | 成功: {success} | 失败: {failed} | 跳过: {skipped} | "
+        f"跑通: {run_through} | 未跑通: {not_run_through}"
+    )
+    if failure_type_counts:
+        log(f"失败类型统计: {dict(failure_type_counts)}")
     log(f"总耗时: {summary['total_duration_seconds']:.0f} 秒")
     log("=" * 60)
 
@@ -604,16 +1683,19 @@ def main():
         reason = r.get("skip_reason", "")
         acc = r.get("accuracy_passed")
         bench = r.get("benchmark_passed")
+        rt = r.get("run_through")
         dur = r.get("duration_seconds")
         if status == "success":
             if acc is True and bench is True:
-                log(f"  ✅ {op_name}: 精度通过 + 性能通过 ({dur}s)")
+                log(f"  ✅ {op_name}: 精度通过 + 性能通过 | run_through={rt} ({dur}s)")
             elif acc is True:
-                log(f"  ✅ {op_name}: 精度通过 (无Benchmark) ({dur}s)")
+                log(f"  ✅ {op_name}: 精度通过 (无Benchmark) | run_through={rt} ({dur}s)")
             elif bench is True:
-                log(f"  ✅ {op_name}: 性能通过 (无精度测试) ({dur}s)")
+                log(f"  ✅ {op_name}: 性能通过 (无精度测试) | run_through={rt} ({dur}s)")
         elif status in ("failed", "error", "partial"):
-            log(f"  ❌ {op_name}: {status} ({dur}s)")
+            test_ft = (r.get("test") or {}).get("failure_type")
+            bench_ft = (r.get("benchmark") or {}).get("failure_type")
+            log(f"  ❌ {op_name}: {status} | run_through={rt} | test={test_ft} | bench={bench_ft} ({dur}s)")
         else:
             log(f"  ⚠️  {op_name}: 跳过 ({reason})")
 
