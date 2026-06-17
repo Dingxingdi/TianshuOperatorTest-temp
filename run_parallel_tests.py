@@ -92,6 +92,14 @@ DEFAULT_WORK_DIR = first_existing_path(
 WORK_DIR = env_path("KUNLUN_WORK_DIR", DEFAULT_WORK_DIR)
 FLAGGEMS_BASE = env_path("KUNLUN_FLAGGEMS_BASE", WORK_DIR / "FlagGems_minimax_2_7")
 WORKTREES_DIR = env_path("KUNLUN_WORKTREES_DIR", FLAGGEMS_BASE / ".worktrees")
+TEST_VENDOR = (
+    os.environ.get("GEMS_TEST_VENDOR")
+    or os.environ.get("GEMS_VENDOR")
+    or os.environ.get("KUNLUN_VENDOR")
+    or "kunlunxin"
+).strip().lower()
+if not TEST_VENDOR:
+    TEST_VENDOR = "kunlunxin"
 EXCEL_PATH = env_path(
     "KUNLUN_EXCEL_PATH",
     first_existing_path(WORK_DIR / EXCEL_FILENAME, SCRIPT_DIR / EXCEL_FILENAME),
@@ -107,8 +115,13 @@ ACCURACY_TIMEOUT = env_int("KUNLUN_ACCURACY_TIMEOUT", CMD_TIMEOUT)
 BENCHMARK_TIMEOUT = env_int("KUNLUN_BENCHMARK_TIMEOUT", CMD_TIMEOUT)
 KILL_GRACE_SECONDS = env_int("KUNLUN_KILL_GRACE_SECONDS", 10)
 
-# 昆仑芯管理命令。用户环境中为 xpu_smi；如果机器使用 xpu-smi，可通过环境变量覆盖。
-XPU_SMI_CMD = os.environ.get("KUNLUN_XPU_SMI", "xpu_smi")
+# 设备管理命令。保留 KUNLUN_XPU_SMI 兼容旧用法；也可用 GEMS_DEVICE_MONITOR_CMD 覆盖。
+DEFAULT_DEVICE_MONITOR_CMD = "efsmi" if TEST_VENDOR == "enflame" else "xpu_smi"
+XPU_SMI_CMD = (
+    os.environ.get("GEMS_DEVICE_MONITOR_CMD")
+    or os.environ.get("KUNLUN_XPU_SMI")
+    or DEFAULT_DEVICE_MONITOR_CMD
+)
 
 # 容器里的测试环境在 python310_torch25_cuda；如需其他 Python，可通过环境变量覆盖。
 DEFAULT_PYTHON_BIN = first_existing_path(
@@ -117,12 +130,19 @@ DEFAULT_PYTHON_BIN = first_existing_path(
 )
 PYTHON_BIN = os.environ.get("KUNLUN_PYTHON", str(DEFAULT_PYTHON_BIN))
 
-# FlagGems 的 _kunlunxin 后端当前声明 device_name="cuda"，因此默认仍使用 CUDA_VISIBLE_DEVICES。
-DEVICE_VISIBLE_ENV = os.environ.get("KUNLUN_VISIBLE_DEVICES_ENV", "CUDA_VISIBLE_DEVICES")
+# FlagGems 的部分后端会声明为 cuda 兼容设备，因此默认仍使用 CUDA_VISIBLE_DEVICES。
+DEVICE_VISIBLE_ENV = (
+    os.environ.get("GEMS_VISIBLE_DEVICES_ENV")
+    or os.environ.get("KUNLUN_VISIBLE_DEVICES_ENV")
+    or "CUDA_VISIBLE_DEVICES"
+)
 VISIBLE_DEVICE_ENV_NAMES = tuple(
     OrderedDict.fromkeys(
         [
             "CUDA_VISIBLE_DEVICES",
+            "TOPS_VISIBLE_DEVICES",
+            "GCU_VISIBLE_DEVICES",
+            "ENFLAME_VISIBLE_DEVICES",
             "XPU_VISIBLE_DEVICES",
             "KUNLUN_VISIBLE_DEVICES",
             DEVICE_VISIBLE_ENV,
@@ -377,6 +397,38 @@ def parse_xpu_smi_summary(output):
     return gpu_usages
 
 
+def parse_efsmi_summary(output):
+    """解析 efsmi 摘要输出中的设备号和 DUsed 百分比。"""
+    gpu_usages = {}
+    current_device = None
+    for line in output.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            continue
+
+        fields = [field.strip() for field in stripped.strip("|").split("|")]
+        if not fields:
+            continue
+
+        m_device = re.match(r"^(\d+)\s+", fields[0])
+        if m_device:
+            current_device = int(m_device.group(1))
+            gpu_usages.setdefault(current_device, 0.0)
+            continue
+
+        if current_device is None:
+            continue
+
+        for field in fields:
+            m_usage = re.search(r"\b(\d+(?:\.\d+)?)%\b", field)
+            if m_usage:
+                gpu_usages[current_device] = float(m_usage.group(1))
+                current_device = None
+                break
+
+    return gpu_usages
+
+
 def run_xpu_smi(args):
     """运行 xpu_smi，失败时返回 None。"""
     try:
@@ -396,7 +448,15 @@ def run_xpu_smi(args):
 
 
 def get_gpu_memory_usage():
-    """通过 xpu_smi 获取每块昆仑芯的显存使用率。"""
+    """通过设备管理命令获取每块设备的使用率。"""
+    if Path(XPU_SMI_CMD).name == "efsmi":
+        output = run_xpu_smi([])
+        if output:
+            gpu_usages = parse_efsmi_summary(output)
+            if gpu_usages:
+                return gpu_usages
+        return None
+
     output = run_xpu_smi(["-m"])
     if output:
         gpu_usages = parse_xpu_smi_machine_readable(output)
@@ -412,8 +472,48 @@ def get_gpu_memory_usage():
     return None
 
 
+def detect_num_devices_from_torch():
+    """优先通过当前 Python 环境里的 torch 后端发现设备数。"""
+    attr_by_vendor = {
+        "enflame": "gcu",
+        "nvidia": "cuda",
+        "iluvatar": "cuda",
+        "metax": "cuda",
+        "mthreads": "musa",
+        "ascend": "npu",
+        "cambricon": "mlu",
+        "tsingmicro": "txda",
+        "sunrise": "ptpu",
+    }
+    attr = attr_by_vendor.get(TEST_VENDOR)
+    if not attr:
+        return None
+
+    try:
+        import torch
+    except Exception as e:
+        log(f"torch 导入失败，无法自动发现设备数: {e}")
+        return None
+
+    device_mod = getattr(torch, attr, None)
+    if device_mod is None or not hasattr(device_mod, "device_count"):
+        return None
+
+    try:
+        count = int(device_mod.device_count())
+    except Exception as e:
+        log(f"torch.{attr}.device_count() 调用失败: {e}")
+        return None
+
+    return count if count > 0 else None
+
+
 def detect_num_gpus():
-    """优先通过 xpu_smi 自动发现设备数；失败时由 NUM_GPUS 兜底。"""
+    """优先通过 torch 后端自动发现设备数，再尝试设备管理命令；失败时由 NUM_GPUS 兜底。"""
+    torch_count = detect_num_devices_from_torch()
+    if torch_count is not None:
+        return torch_count
+
     usages = get_gpu_memory_usage()
     if not usages:
         return None
@@ -501,6 +601,7 @@ def split_chained_command(cmd):
 def build_full_cmd(cmd, work_dir, gpu_id):
     env_prefix = " ".join(
         [
+            f"GEMS_VENDOR={shlex.quote(TEST_VENDOR)}",
             'VLLM_PLUGINS=""',
             "PYTHONUNBUFFERED=1",
             f"{DEVICE_VISIBLE_ENV}={shlex.quote(str(gpu_id))}",
@@ -1410,14 +1511,14 @@ def worker_thread(
 def main():
     global_start = datetime.now(timezone.utc)
     log("=" * 60)
-    log("昆仑芯 P800 并行测试脚本启动")
+    log(f"{TEST_VENDOR} 并行测试脚本启动")
     log(f"时间戳: {global_start.isoformat()}")
     log(f"工作目录: {WORK_DIR}")
     log(f"FlagGems: {FLAGGEMS_BASE}")
     log(f"worktrees: {WORKTREES_DIR}")
     log(f"Excel: {EXCEL_PATH}")
     log(f"CSV: {CSV_PATH}")
-    log(f"xpu_smi 命令: {XPU_SMI_CMD}")
+    log(f"设备管理命令: {XPU_SMI_CMD}")
     log(f"Python 命令: {PYTHON_BIN}")
     log(f"设备可见变量: {DEVICE_VISIBLE_ENV}")
     log(
@@ -1537,9 +1638,9 @@ def main():
         detected_num_gpus = detect_num_gpus()
         effective_num_gpus = detected_num_gpus or NUM_GPUS
         if detected_num_gpus is None:
-            log(f"xpu_smi 未能发现设备数，使用配置卡数: {effective_num_gpus}")
+            log(f"未能自动发现设备数，使用配置卡数: {effective_num_gpus}")
         else:
-            log(f"xpu_smi 发现设备数: {effective_num_gpus}")
+            log(f"自动发现设备数: {effective_num_gpus}")
 
         device_ids, invalid_device_ids = get_effective_device_ids(detected_num_gpus)
         effective_num_gpus = len(device_ids)
@@ -1607,7 +1708,7 @@ def main():
         "unmatched_no_csv_command": len(unmatched),
         "no_worktree_directory": len(no_dir),
         "total_duration_seconds": round((global_end - global_start).total_seconds(), 1),
-        "vendor": "kunlunxin",
+        "vendor": TEST_VENDOR,
         "xpu_smi_cmd": XPU_SMI_CMD,
         "python_bin": PYTHON_BIN,
         "visible_devices_env": DEVICE_VISIBLE_ENV,

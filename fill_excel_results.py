@@ -19,6 +19,7 @@ VENDOR_RESULT_HEADERS = {
     "kunlunxin": "昆仑芯测试结果",
     "tianshu": "天数测试结果",
     "metax": "沐曦测试结果",
+    "enflame": "燧原测试结果",
 }
 
 
