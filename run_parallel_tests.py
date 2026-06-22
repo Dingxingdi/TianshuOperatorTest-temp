@@ -293,6 +293,46 @@ def parse_csv_commands(csv_path):
     return commands
 
 
+def iter_operator_aliases(op_name):
+    """生成 Excel/CSV/worktree 中常见的算子别名。"""
+    aliases = [
+        op_name,
+        op_name.replace(" ", "+"),
+        op_name.replace("+", " "),
+        op_name.replace("_", " "),
+        op_name.replace("_", "+"),
+        op_name.replace("+", "_"),
+    ]
+    if op_name.startswith("aten::"):
+        aliases.append(op_name[len("aten::"):])
+    else:
+        aliases.append(f"aten::{op_name}")
+
+    seen = set()
+    for alias in aliases:
+        if alias and alias not in seen:
+            seen.add(alias)
+            yield alias
+
+
+def operator_match_key(op_name):
+    return re.sub(r"[^a-z0-9]+", "", op_name.lower().removeprefix("aten::"))
+
+
+def get_csv_command(csv_commands, op_name):
+    for alias in iter_operator_aliases(op_name):
+        cmd_info = csv_commands.get(alias)
+        if cmd_info:
+            return cmd_info, alias
+
+    target = operator_match_key(op_name)
+    for csv_op_name, cmd_info in csv_commands.items():
+        if operator_match_key(csv_op_name) == target:
+            return cmd_info, csv_op_name
+
+    return None, None
+
+
 def get_safe_filename(op_name):
     """将算子名转为安全的文件名"""
     safe = op_name.replace("/", "_").replace("\\", "_").replace(" ", "_")
@@ -332,14 +372,7 @@ def strip_gpu_prefix(cmd):
 
 def find_worktree_dir(op_name):
     """根据算子名找到 worktree 目录"""
-    candidates = [
-        f"gen-{op_name}",
-        f"gen-{op_name.replace(' ', '+')}",
-        f"gen-{op_name.replace('+', ' ')}",
-        f"gen-{op_name.replace('_', ' ')}",
-    ]
-    if "+" in op_name:
-        candidates.append(f"gen-{op_name}")
+    candidates = [f"gen-{alias}" for alias in iter_operator_aliases(op_name)]
     seen = set()
     unique_candidates = []
     for c in candidates:
@@ -1142,7 +1175,7 @@ def parse_command_log(log_file, expected_cmd, cmd_type):
 
 
 def build_result_from_existing_logs(op_name, op_info, csv_commands, output_dir):
-    cmd_info = csv_commands.get(op_name)
+    cmd_info, csv_op_name = get_csv_command(csv_commands, op_name)
     if not cmd_info:
         return None, "CSV 中未找到匹配命令"
 
@@ -1247,7 +1280,7 @@ def operator_result_complete_for_current_run(op_name, result, csv_commands):
     if status not in ("success", "failed", "skipped"):
         return False
 
-    cmd_info = csv_commands.get(op_name)
+    cmd_info, _ = get_csv_command(csv_commands, op_name)
     if not cmd_info:
         return status == "skipped"
 
@@ -1315,7 +1348,7 @@ def process_operator(op_name, op_info, csv_commands, results, gpu_lock_dict, gpu
     op_safe_name = get_safe_filename(op_name)
 
     # 1. 查找 CSV 命令
-    cmd_info = csv_commands.get(op_name)
+    cmd_info, csv_op_name = get_csv_command(csv_commands, op_name)
     if not cmd_info:
         log(f"  ⚠ CSV 中找不到 {op_name}，跳过")
         results[op_name] = {
@@ -1324,6 +1357,8 @@ def process_operator(op_name, op_info, csv_commands, results, gpu_lock_dict, gpu
             "source_sheet": op_info.get("source_sheet", ""),
         }
         return
+    if csv_op_name != op_name:
+        log(f"  CSV 匹配别名: {op_name} -> {csv_op_name}")
 
     test_cmd = strip_gpu_prefix(cmd_info.get("test_cmd", ""))
     bench_cmd = strip_gpu_prefix(cmd_info.get("bench_cmd", ""))
@@ -1558,21 +1593,35 @@ def main():
 
     operator_items = list(operators.items())
     if ONLY_OPS:
-        only_set = set(ONLY_OPS)
-        operator_items = [(op, info) for op, info in operator_items if op in only_set]
-        missing_only_ops = sorted(only_set - set(operators.keys()))
+        only_by_key = {operator_match_key(op): op for op in ONLY_OPS}
+        operator_items = [
+            (op, info)
+            for op, info in operator_items
+            if operator_match_key(op) in only_by_key
+        ]
+        matched_only_keys = {operator_match_key(op) for op, _ in operator_items}
+        missing_only_ops = sorted(
+            requested
+            for key, requested in only_by_key.items()
+            if key not in matched_only_keys
+        )
         log(f"  指定算子过滤: {len(operator_items)} 个在 Excel 中找到")
         if missing_only_ops:
             log(f"  指定算子不在 Excel 中: {', '.join(missing_only_ops)}")
 
     if SKIP_OPS:
-        skip_set = set(SKIP_OPS)
+        skip_set = {operator_match_key(op) for op in SKIP_OPS}
         before_skip = len(operator_items)
-        operator_items = [(op, info) for op, info in operator_items if op not in skip_set]
+        operator_items = [
+            (op, info)
+            for op, info in operator_items
+            if operator_match_key(op) not in skip_set
+        ]
         log(f"  跳过算子过滤: {before_skip - len(operator_items)} 个")
 
     for op_name, op_info in operator_items:
-        if op_name not in csv_commands:
+        cmd_info, _ = get_csv_command(csv_commands, op_name)
+        if not cmd_info:
             unmatched.append(op_name)
             continue
         worktree_path = find_worktree_dir(op_name)
