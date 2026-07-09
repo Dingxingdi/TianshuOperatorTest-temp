@@ -638,7 +638,7 @@ def split_chained_command(cmd):
 def build_full_cmd(cmd, work_dir, gpu_id):
     env_prefix = " ".join(
         [
-            # Do not force GEMS_VENDOR; FlagGems auto-detects PTPU correctly.
+            f"GEMS_VENDOR={shlex.quote(TEST_VENDOR)}",
             'VLLM_PLUGINS=""',
             "PYTHONUNBUFFERED=1",
             f"{DEVICE_VISIBLE_ENV}={shlex.quote(str(gpu_id))}",
